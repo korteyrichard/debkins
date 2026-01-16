@@ -169,8 +169,8 @@ export default function AFAProducts() {
 
       {/* Create Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800">
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50 p-4">
+          <div className="relative mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 max-h-[90vh] overflow-y-auto my-8">
             <div className="mt-3">
               <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
                 Create New AFA Product
@@ -237,8 +237,8 @@ export default function AFAProducts() {
 
       {/* Edit Modal */}
       {showEditModal && editingProduct && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800">
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50 p-4">
+          <div className="relative mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 max-h-[90vh] overflow-y-auto my-8">
             <div className="mt-3">
               <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
                 Edit AFA Product

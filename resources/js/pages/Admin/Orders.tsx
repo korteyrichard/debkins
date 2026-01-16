@@ -24,11 +24,11 @@ interface Order {
   beneficiary_number?: string;
   order_pusher_status: 'disabled' | 'success' | 'failed' | null | undefined;
   products: Product[];
-  user: {
+  user?: {
     id: number;
     name: string;
     email: string;
-  };
+  } | null;
 }
 
 interface PaginatedOrders {
@@ -346,8 +346,8 @@ export default function AdminOrders() {
                     <td className="px-3 py-3 font-semibold border border-slate-600">{order.id}</td>
                     <td className="px-3 py-3 border border-slate-600">
                       <div className="text-sm">
-                        <div className="font-medium">{order.user.name}</div>
-                        <div className="text-gray-500 text-xs">{order.user.email}</div>
+                        <div className="font-medium">{order.user?.name || 'N/A'}</div>
+                        <div className="text-gray-500 text-xs">{order.user?.email || 'N/A'}</div>
                       </div>
                     </td>
                     <td className="px-3 py-3 border border-slate-600">

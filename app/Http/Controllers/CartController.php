@@ -24,7 +24,13 @@ class CartController extends Controller
             ]);
             
             // Determine product type based on user role
-            $productType = $user->isCustomer() ? 'customer_product' : 'agent_product';
+            if ($user->isDealer()) {
+                $productType = 'dealer_product';
+            } elseif ($user->isAgent() || $user->isAdmin()) {
+                $productType = 'agent_product';
+            } else {
+                $productType = 'customer_product';
+            }
             
             // Find the product by network and product type
             $product = Product::where('network', $request->network)
@@ -170,7 +176,13 @@ class CartController extends Controller
             $user = Auth::user();
             
             // Determine product type based on user role
-            $productType = $user->isCustomer() ? 'customer_product' : 'agent_product';
+            if ($user->isDealer()) {
+                $productType = 'dealer_product';
+            } elseif ($user->isAgent() || $user->isAdmin()) {
+                $productType = 'agent_product';
+            } else {
+                $productType = 'customer_product';
+            }
             
             // Find the product by network and product type
             $product = Product::where('network', $request->network)
@@ -291,7 +303,13 @@ class CartController extends Controller
             Log::info('User authenticated', ['user_id' => $user->id, 'role' => $user->role]);
             
             // Determine product type based on user role
-            $productType = $user->isCustomer() ? 'customer_product' : 'agent_product';
+            if ($user->isDealer()) {
+                $productType = 'dealer_product';
+            } elseif ($user->isAgent() || $user->isAdmin()) {
+                $productType = 'agent_product';
+            } else {
+                $productType = 'customer_product';
+            }
             Log::info('Product type determined', ['product_type' => $productType]);
             
             // Find the product by network and product type

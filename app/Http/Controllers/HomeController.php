@@ -16,8 +16,19 @@ class HomeController extends Controller
             return response()->json(['success' => false, 'message' => 'Network is required']);
         }
         
+        $user = auth()->user();
+        
+        // Determine product type based on user role
+        if ($user && $user->isDealer()) {
+            $productType = 'dealer_product';
+        } elseif ($user && ($user->isAgent() || $user->isAdmin())) {
+            $productType = 'agent_product';
+        } else {
+            $productType = 'customer_product';
+        }
+        
         $product = Product::where('network', $network)
-            ->where('product_type', 'customer_product')
+            ->where('product_type', $productType)
             ->first();
         
         if (!$product) {

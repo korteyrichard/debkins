@@ -96,7 +96,7 @@ class OrderStatusSyncService
                     // Send SMS notification if order is completed (skip if network is MTN)
                     if ($newStatus === 'completed' && $order->user && $order->user->phone && strtoupper($order->network) !== 'MTN') {
                         try {
-                            $message = "Your order #{$order->id} for {$order->network} data has been completed successfully. Thank you for using DataFraternity!";
+                            $message = "Your order #{$order->id} for {$order->network} data has been completed successfully. Thank you for using Affiliatesconnects!";
                             $smsResult = $this->moolreSmsService->sendSms($order->user->phone, $message);
                             Log::info('SMS notification sent for completed order', [
                                 'order_id' => $order->id,

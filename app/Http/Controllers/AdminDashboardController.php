@@ -113,7 +113,7 @@ class AdminDashboardController extends Controller
     {
         $orders = Order::with(['products' => function($query) {
             $query->withPivot('quantity', 'price', 'beneficiary_number', 'product_variant_id');
-        }, 'user'])->select('*')->latest();
+        }, 'user'])->select('*')->latest()->whereNotNull('user_id');
 
         if ($request->has('network') && $request->input('network') !== '') {
             $orders->where('network', 'like', '%' . $request->input('network') . '%');

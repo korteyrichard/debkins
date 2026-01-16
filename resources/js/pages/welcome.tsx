@@ -371,7 +371,7 @@ export default function Welcome() {
                         {/* Welcome Text */}
                         <div className="text-center mb-8">
                             <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-                                Welcome to DebkinsDataPlug!!
+                                Welcome to Affiliatesconnects!!
                             </h1>
                             <p className="text-lg text-gray-600">
                                 Your one stop shop for internet data bundles.

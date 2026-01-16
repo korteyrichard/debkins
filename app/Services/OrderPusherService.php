@@ -9,11 +9,17 @@ use Illuminate\Support\Facades\Log;
 class OrderPusherService
 {
     private $baseUrl = 'https://agent.jaybartservices.com/api/v1';
-    private $apiKey = 'e86efb714fb64202ad66481ea24ee784ce570a05';
+    private $apiKey = '';
 
     public function pushOrderToApi(Order $order)
     {
         Log::info('Processing order for API push', ['order_id' => $order->id]);
+        
+        // Only push MTN orders
+        if (strtoupper($order->network) !== 'MTN') {
+            Log::info('Skipping non-MTN order', ['order_id' => $order->id, 'network' => $order->network]);
+            return;
+        }
         
         $items = $order->products()->withPivot('quantity', 'price', 'beneficiary_number', 'product_variant_id')->get();
         Log::info('Order has items', ['count' => $items->count()]);

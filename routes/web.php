@@ -25,6 +25,7 @@ Route::get('/test-bundle', function() { return response()->json(['test' => 'work
 Route::get('/', function () {
     $cartCount = 0;
     $cartItems = [];
+    $products = [];
     
     if (auth()->check()) {
         $user = auth()->user();
@@ -52,9 +53,20 @@ Route::get('/', function () {
                     ]
                 ];
             });
+        
+        // Filter products based on user role
+        if ($user->isCustomer()) {
+            $products = \App\Models\Product::where('product_type', 'customer_product')->get();
+        } elseif ($user->isDealer()) {
+            $products = \App\Models\Product::where('product_type', 'dealer_product')->get();
+        } else {
+            // Agent/Admin see agent products
+            $products = \App\Models\Product::where('product_type', 'agent_product')->get();
+        }
+    } else {
+        // Unauthenticated users see customer products
+        $products = \App\Models\Product::where('product_type', 'customer_product')->get();
     }
-    
-    $products = \App\Models\Product::all();
     
     return Inertia::render('welcome', [
         'cartCount' => $cartCount,

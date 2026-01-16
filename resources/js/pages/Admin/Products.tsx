@@ -257,8 +257,8 @@ const submitEditProduct = (e: React.FormEvent) => {
 
       {/* ADD PRODUCT MODAL */}
       {showAddProductModal && (
-        <div className="fixed mt-5 inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex justify-center items-center z-50 p-2 sm:p-0">
-          <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-xl w-full max-w-md">
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto my-8">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Add New Product</h3>
             <form onSubmit={submitAddProduct}>
               <div className="mb-4">
@@ -439,8 +439,8 @@ const submitEditProduct = (e: React.FormEvent) => {
       {/* EDIT PRODUCT MODAL */}
 
       {showEditProductModal && selectedProduct && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex justify-center items-center z-50 p-2 sm:p-0">
-          <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-xl w-full max-w-md">
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto my-8">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Edit Product</h3>
             <form onSubmit={submitEditProduct}>
               <div className="mb-4">
