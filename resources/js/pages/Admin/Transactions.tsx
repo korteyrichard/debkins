@@ -42,6 +42,7 @@ interface AdminTransactionsPageProps {
   transactions: PaginatedTransactions;
   auth: any;
   filterType: string;
+  agentFee: number;
   [key: string]: any;
 }
 
@@ -64,8 +65,10 @@ const typeColors: Record<string, string> = {
 };
 
 export default function AdminTransactions() {
-  const { transactions, auth, filterType: initialFilterType } = usePage<AdminTransactionsPageProps>().props;
+  const { transactions, auth, filterType: initialFilterType, agentFee: initialAgentFee } = usePage<AdminTransactionsPageProps>().props;
   const [filterType, setFilterType] = useState(initialFilterType);
+  const [agentFee, setAgentFee] = useState(initialAgentFee);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newFilter = e.target.value;
@@ -73,10 +76,41 @@ export default function AdminTransactions() {
     router.get(route('admin.transactions'), { type: newFilter }, { preserveState: true, replace: true });
   };
 
+  const handleAgentFeeUpdate = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsUpdating(true);
+    router.post(route('admin.agent-fee.update'), { fee: agentFee }, {
+      onFinish: () => setIsUpdating(false),
+    });
+  };
+
   return (
     <AdminLayout user={auth?.user} header={<h2 className="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">Admin Transactions</h2>}>
       <Head title="Admin Transactions" />
       <div className="py-8 max-w-4xl mx-auto">
+        <div className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+          <form onSubmit={handleAgentFeeUpdate} className="flex flex-col sm:flex-row sm:items-end gap-4">
+            <div className="flex-1">
+              <label className="block font-medium mb-2">Agent Registration Fee (GHS)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={agentFee}
+                onChange={(e) => setAgentFee(parseFloat(e.target.value))}
+                className="border rounded px-3 py-2 w-full"
+                required
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={isUpdating}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+            >
+              {isUpdating ? 'Updating...' : 'Update Fee'}
+            </button>
+          </form>
+        </div>
         <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <label className="font-medium">Filter by Type:</label>
           <select

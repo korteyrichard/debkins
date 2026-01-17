@@ -1,9 +1,9 @@
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, usePage } from '@inertiajs/react';
 
 export default function BecomeAnAgent() {
-    const { data, setData, post, processing, errors } = useForm({
-        amount: 40
-    });
+    const props = usePage().props as any;
+    const agentFee = props.agentFee || 50;
+    const { post, processing, errors } = useForm();
 
     const handleBecomeAgent = (e: React.FormEvent) => {
         e.preventDefault();
@@ -25,13 +25,13 @@ export default function BecomeAnAgent() {
                     </p>
 
                     <form onSubmit={handleBecomeAgent}>
-                        <input type="hidden" name="amount" value="50" />
+                        <input type="hidden" name="amount" value={agentFee} />
                         <button
                             type="submit"
                             disabled={processing}
                             className="inline-block mt-4 px-8 py-4 bg-blue-600 text-white text-lg font-semibold rounded-full shadow-md hover:bg-blue-700 hover:-translate-y-1 transition-all duration-300 disabled:opacity-50"
                         >
-                            {processing ? 'Processing...' : 'Pay GHS 50 to Gain API Access'}
+                            {processing ? 'Processing...' : `Pay GHS ${agentFee} to Gain API Access`}
                         </button>
                         {errors.message && <p className="text-red-500 text-sm mt-2">{errors.message}</p>}
                     </form>

@@ -307,7 +307,22 @@ class AdminDashboardController extends Controller
         return Inertia::render('Admin/Transactions', [
             'transactions' => $transactions->paginate(10),
             'filterType' => $request->input('type', ''),
+            'agentFee' => Setting::get('agent_registration_fee', 50),
         ]);
+    }
+
+    /**
+     * Update agent registration fee.
+     */
+    public function updateAgentFee(Request $request)
+    {
+        $request->validate([
+            'fee' => 'required|numeric|min:0',
+        ]);
+
+        Setting::set('agent_registration_fee', $request->fee);
+
+        return redirect()->back()->with('success', 'Agent registration fee updated successfully.');
     }
 
     /**

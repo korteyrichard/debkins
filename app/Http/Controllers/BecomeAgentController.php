@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use App\Models\Transaction;
+use App\Models\Setting;
 use Illuminate\Support\Facades\Redirect;
 
 class BecomeAgentController extends Controller
@@ -20,8 +21,8 @@ class BecomeAgentController extends Controller
 
         $reference = 'agent_' . Str::random(16);
         
-        // Calculate 1% transaction fee
-        $registrationFee = 50;
+        // Get agent fee from settings (default to 50 if not set)
+        $registrationFee = (float) Setting::get('agent_registration_fee', 50);
         $transactionFee = $registrationFee * 0.01;
         $totalAmount = $registrationFee + $transactionFee;
         
@@ -32,14 +33,9 @@ class BecomeAgentController extends Controller
             'amount' => $registrationFee,
             'status' => 'pending',
             'type' => 'agent_fee',
-            'description' => 'API access fee of GHS 30.00 (+ GHS ' . number_format($transactionFee, 2) . ' fee)',
+            'description' => 'Agent registration fee of GHS ' . number_format($registrationFee, 2) . ' (+ GHS ' . number_format($transactionFee, 2) . ' fee)',
             'reference' => $reference,
         ]);
-
-        // Calculate 1% transaction fee
-        $registrationFee = 50;
-        $transactionFee = $registrationFee * 0.01;
-        $totalAmount = $registrationFee + $transactionFee;
         
         // Initialize Paystack payment
         $response = Http::withHeaders([

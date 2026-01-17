@@ -76,7 +76,9 @@ Route::get('/', function () {
 })->name('home');
 
 Route::get('/become_an_agent', function () {
-        return Inertia::render('become_an_agent');
+        $agentFee = \App\Models\Setting::where('key', 'agent_registration_fee')->first();
+        $fee = $agentFee ? (float) $agentFee->value : 50;
+        return Inertia::render('become_an_agent', ['agentFee' => $fee]);
     })->name('become_an_agent');
 
 
@@ -145,6 +147,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::put('orders/{order}/status', [\App\Http\Controllers\AdminDashboardController::class, 'updateOrderStatus'])->name('orders.updateStatus');
     Route::put('orders/bulk-status', [\App\Http\Controllers\AdminDashboardController::class, 'bulkUpdateOrderStatus'])->name('orders.bulkUpdateStatus');
     Route::get('transactions', [\App\Http\Controllers\AdminDashboardController::class, 'transactions'])->name('transactions');
+    Route::post('agent-fee', [\App\Http\Controllers\AdminDashboardController::class, 'updateAgentFee'])->name('agent-fee.update');
     Route::get('users/{user}/transactions', [\App\Http\Controllers\AdminDashboardController::class, 'userTransactions'])->name('users.transactions');
     Route::post('orders/export', [\App\Http\Controllers\AdminDashboardController::class, 'exportOrders'])->name('orders.export');
     Route::get('afa-orders', [\App\Http\Controllers\AdminDashboardController::class, 'afaOrders'])->name('afa-orders');
