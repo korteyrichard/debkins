@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use App\Services\OrderPusherService;
+use App\Services\FosterOrderPusherService;
 use App\Models\Setting;
 
 class OrdersController extends Controller
@@ -142,13 +143,20 @@ class OrdersController extends Controller
 
             // Push orders to external APIs based on network and individual service settings
             $jaybartEnabled = (bool) Setting::get('jaybart_order_pusher_enabled', 1);
+            $fosterEnabled = (bool) Setting::get('foster_order_pusher_enabled', 1);
             
             foreach ($createdOrders as $order) {
                 try {
-                    if ($jaybartEnabled) {
+                    $network = strtolower($order->network);
+                    
+                    if ($network === 'mtn' && $jaybartEnabled) {
                         $orderPusher = new OrderPusherService();
                         $orderPusher->pushOrderToApi($order);
                         Log::info('Order pushed to Jaybart API', ['orderId' => $order->id, 'network' => $order->network]);
+                    } elseif (in_array($network, ['telecel', 'ishare', 'bigtime']) && $fosterEnabled) {
+                        $fosterPusher = new FosterOrderPusherService();
+                        $fosterPusher->pushOrderToApi($order);
+                        Log::info('Order pushed to Foster API', ['orderId' => $order->id, 'network' => $order->network]);
                     } else {
                         Log::info('No enabled order pusher for network', ['orderId' => $order->id, 'network' => $order->network]);
                     }

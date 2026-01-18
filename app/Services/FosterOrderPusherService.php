@@ -6,18 +6,26 @@ use App\Models\Order;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
-class OrderPusherService
+class FosterOrderPusherService
 {
-    private $baseUrl = 'https://agent.jaybartservices.com/api/v1';
-    private $apiKey = 'e86efb714fb64202ad66481ea24ee784ce570a05';
+    private $baseUrl = 'https://fgamall.researchershubgh.com/api/v1';
+    private $apiKey;
+
+    public function __construct()
+    {
+        $this->apiKey = env('FOSTER_API_KEY', '');
+        Log::info('FosterOrderPusherService initialized', ['api_key_set' => !empty($this->apiKey)]);
+    }
 
     public function pushOrderToApi(Order $order)
     {
-        Log::info('Processing order for Jaybart API push', ['order_id' => $order->id]);
+        Log::info('Processing order for Foster API push', ['order_id' => $order->id]);
         
-        // Only push MTN orders
-        if (strtoupper($order->network) !== 'MTN') {
-            Log::info('Skipping non-MTN order', ['order_id' => $order->id, 'network' => $order->network]);
+        $network = strtoupper($order->network);
+        
+        // Only push Telecel, Ishare, and Bigtime orders
+        if (!in_array($network, ['TELECEL', 'ISHARE', 'BIGTIME'])) {
+            Log::info('Skipping non-Foster network order', ['order_id' => $order->id, 'network' => $order->network]);
             return;
         }
         
@@ -57,14 +65,28 @@ class OrderPusherService
                 continue;
             }
 
-            $endpoint = $this->baseUrl . '/buy-other-package';
-            $payload = [
-                'recipient_msisdn' => $this->formatPhone($beneficiaryPhone),
-                'network_id' => $networkId,
-                'shared_bundle' => $sharedBundle
-            ];
+            // Determine endpoint based on network
+            if ($network === 'ISHARE') {
+                $endpoint = $this->baseUrl . '/buy-ishare-package';
+                $payload = [
+                    'recipient_msisdn' => $this->formatPhone($beneficiaryPhone),
+                    'shared_bundle' => $sharedBundle / 1000, // Convert MB to GB for ishare
+                    'order_reference' => 'DEB-' . $order->id
+                ];
+            } else {
+                $endpoint = $this->baseUrl . '/buy-other-package';
+                $payload = [
+                    'recipient_msisdn' => $this->formatPhone($beneficiaryPhone),
+                    'network_id' => $networkId,
+                    'shared_bundle' => $sharedBundle
+                ];
+            }
             
-            Log::info('Sending to Jaybart API', ['endpoint' => $endpoint, 'payload' => $payload]);
+            Log::info('Sending to Foster API', [
+                'endpoint' => $endpoint, 
+                'payload' => $payload,
+                'api_key_length' => strlen($this->apiKey)
+            ]);
 
             try {
                 $response = Http::withHeaders([
@@ -73,27 +95,39 @@ class OrderPusherService
                     'Content-Type' => 'application/json'
                 ])->timeout(30)->post($endpoint, $payload);
 
-                Log::info('Jaybart API Response', [
+                Log::info('Foster API Response', [
                     'status_code' => $response->status(),
                     'body' => $response->body()
                 ]);
 
                 if ($response->successful()) {
                     $responseData = $response->json();
-                    if (isset($responseData['transaction_code'])) {
+                    
+                    // Handle ishare response
+                    if ($network === 'ISHARE' && isset($responseData['vendorTranxId'])) {
+                        $order->update(['reference_id' => $responseData['vendorTranxId']]);
+                        Log::info('Reference ID saved', [
+                            'order_id' => $order->id,
+                            'reference_id' => $responseData['vendorTranxId']
+                        ]);
+                    }
+                    
+                    // Handle other networks response
+                    if ($network !== 'ISHARE' && isset($responseData['transaction_code'])) {
                         $order->update(['reference_id' => $responseData['transaction_code']]);
                         Log::info('Reference ID saved', [
                             'order_id' => $order->id,
                             'reference_id' => $responseData['transaction_code']
                         ]);
                     }
+                    
                     $hasSuccessfulResponse = true;
                 } else {
                     $hasFailedResponse = true;
                 }
 
             } catch (\Exception $e) {
-                Log::error('Jaybart API Error', ['message' => $e->getMessage()]);
+                Log::error('Foster API Error', ['message' => $e->getMessage()]);
                 $hasFailedResponse = true;
             }
         }
@@ -121,9 +155,7 @@ class OrderPusherService
     {
         $productName = strtolower($productName);
         
-        if (stripos($productName, 'mtn') !== false) {
-            return 3;
-        } elseif (stripos($productName, 'telecel') !== false) {
+        if (stripos($productName, 'telecel') !== false) {
             return 2;
         } elseif (stripos($productName, 'ishare') !== false) {
             return 1;
@@ -131,6 +163,6 @@ class OrderPusherService
             return 4;
         }
         
-        return 3;
+        return null;
     }
 }

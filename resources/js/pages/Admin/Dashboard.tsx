@@ -16,6 +16,7 @@ interface AdminDashboardProps extends PageProps {
   todayOrders: number;
   todayTransactions: number;
   jaybartOrderPusherEnabled: boolean;
+  fosterOrderPusherEnabled: boolean;
 }
 
 const StatCard = ({ 
@@ -69,12 +70,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   todayOrders,
   todayTransactions,
   jaybartOrderPusherEnabled,
+  fosterOrderPusherEnabled,
 }) => {
   const { auth } = usePage<AdminDashboardProps>().props;
 
   const toggleJaybartOrderPusher = () => {
     router.post('/admin/toggle-jaybart-order-pusher', {
       enabled: !jaybartOrderPusherEnabled
+    });
+  };
+
+  const toggleFosterOrderPusher = () => {
+    router.post('/admin/toggle-foster-order-pusher', {
+      enabled: !fosterOrderPusherEnabled
     });
   };
 
@@ -178,50 +186,99 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <div className="h-6 w-1 bg-gradient-to-b from-red-500 to-pink-600 rounded-full" />
             <h3 className="text-xl font-semibold">System Controls</h3>
           </div>
-          <Card className="border-0 shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3">
-                <div className="p-2 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg">
-                  <Activity className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <div className="text-lg font-semibold">Jaybart Order Pusher</div>
-                  <div className="text-sm text-muted-foreground font-normal">
-                    Manage automatic order synchronization with Jaybart API
+          <div className="space-y-4">
+            {/* Jaybart Order Pusher */}
+            <Card className="border-0 shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3">
+                  <div className="p-2 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg">
+                    <Activity className="h-5 w-5 text-white" />
                   </div>
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Badge 
-                    variant={jaybartOrderPusherEnabled ? "default" : "secondary"}
-                    className={jaybartOrderPusherEnabled ? "bg-green-500 hover:bg-green-600" : ""}
-                  >
-                    {jaybartOrderPusherEnabled ? 'Active' : 'Inactive'}
-                  </Badge>
-                  <span className="text-sm text-muted-foreground">
-                    {jaybartOrderPusherEnabled ? 'Orders are being pushed to Jaybart API' : 'Jaybart order pushing is disabled'}
-                  </span>
-                </div>
-                <button
-                  onClick={toggleJaybartOrderPusher}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
-                    jaybartOrderPusherEnabled 
-                      ? 'bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg' 
-                      : 'bg-gray-200 dark:bg-gray-600'
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 shadow-md ${
-                      jaybartOrderPusherEnabled ? 'translate-x-6' : 'translate-x-1'
+                  <div>
+                    <div className="text-lg font-semibold">Jaybart Order Pusher (MTN)</div>
+                    <div className="text-sm text-muted-foreground font-normal">
+                      Manage automatic MTN order synchronization with Jaybart API
+                    </div>
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Badge 
+                      variant={jaybartOrderPusherEnabled ? "default" : "secondary"}
+                      className={jaybartOrderPusherEnabled ? "bg-green-500 hover:bg-green-600" : ""}
+                    >
+                      {jaybartOrderPusherEnabled ? 'Active' : 'Inactive'}
+                    </Badge>
+                    <span className="text-sm text-muted-foreground">
+                      {jaybartOrderPusherEnabled ? 'MTN orders are being pushed to Jaybart API' : 'Jaybart order pushing is disabled'}
+                    </span>
+                  </div>
+                  <button
+                    onClick={toggleJaybartOrderPusher}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
+                      jaybartOrderPusherEnabled 
+                        ? 'bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg' 
+                        : 'bg-gray-200 dark:bg-gray-600'
                     }`}
-                  />
-                </button>
-              </div>
-            </CardContent>
-          </Card>
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 shadow-md ${
+                        jaybartOrderPusherEnabled ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Foster Order Pusher */}
+            <Card className="border-0 shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3">
+                  <div className="p-2 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-lg">
+                    <Activity className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <div className="text-lg font-semibold">Foster Order Pusher (Telecel, Ishare, Bigtime)</div>
+                    <div className="text-sm text-muted-foreground font-normal">
+                      Manage automatic Telecel, Ishare, and Bigtime order synchronization with Foster API
+                    </div>
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Badge 
+                      variant={fosterOrderPusherEnabled ? "default" : "secondary"}
+                      className={fosterOrderPusherEnabled ? "bg-green-500 hover:bg-green-600" : ""}
+                    >
+                      {fosterOrderPusherEnabled ? 'Active' : 'Inactive'}
+                    </Badge>
+                    <span className="text-sm text-muted-foreground">
+                      {fosterOrderPusherEnabled ? 'Telecel, Ishare, and Bigtime orders are being pushed to Foster API' : 'Foster order pushing is disabled'}
+                    </span>
+                  </div>
+                  <button
+                    onClick={toggleFosterOrderPusher}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${
+                      fosterOrderPusherEnabled 
+                        ? 'bg-gradient-to-r from-emerald-500 to-teal-600 shadow-lg' 
+                        : 'bg-gray-200 dark:bg-gray-600'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 shadow-md ${
+                        fosterOrderPusherEnabled ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </section>
       </div>
     </AdminLayout>

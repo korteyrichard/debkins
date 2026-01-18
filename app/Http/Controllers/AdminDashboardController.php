@@ -32,6 +32,7 @@ class AdminDashboardController extends Controller
             'todayOrders' => Order::whereDate('created_at', $today)->count(),
             'todayTransactions' => Transaction::whereDate('created_at', $today)->count(),
             'jaybartOrderPusherEnabled' => (bool) Setting::get('jaybart_order_pusher_enabled', 1),
+            'fosterOrderPusherEnabled' => (bool) Setting::get('foster_order_pusher_enabled', 1),
         ]);
     }
 
@@ -715,6 +716,18 @@ class AdminDashboardController extends Controller
         
         $status = $enabled ? 'enabled' : 'disabled';
         return redirect()->back()->with('success', "Jaybart order pusher {$status} successfully.");
+    }
+
+    /**
+     * Toggle Foster order pusher functionality.
+     */
+    public function toggleFosterOrderPusher(Request $request)
+    {
+        $enabled = $request->input('enabled', false);
+        Setting::set('foster_order_pusher_enabled', $enabled ? '1' : '0');
+        
+        $status = $enabled ? 'enabled' : 'disabled';
+        return redirect()->back()->with('success', "Foster order pusher {$status} successfully.");
     }
 
 

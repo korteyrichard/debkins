@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use Illuminate\Support\Facades\DB;
 use App\Services\OrderPusherService;
+use App\Services\FosterOrderPusherService;
 use App\Services\CodeCraftOrderPusherService;
 use App\Services\JescoOrderPusherService;
 use Illuminate\Support\Facades\Log;
@@ -105,13 +106,11 @@ class OrderController extends Controller
                     $mtnOrderPusher = new OrderPusherService();
                     $mtnOrderPusher->pushOrderToApi($order);
                 }
-                if (Setting::get('jesco_order_pusher_enabled', 1)) {
-                    $jescoOrderPusher = new JescoOrderPusherService();
-                    $jescoOrderPusher->pushOrderToApi($order);
+            } elseif (in_array(strtolower($order->network), ['telecel', 'ishare', 'bigtime'])) {
+                if (Setting::get('foster_order_pusher_enabled', 1)) {
+                    $fosterOrderPusher = new FosterOrderPusherService();
+                    $fosterOrderPusher->pushOrderToApi($order);
                 }
-            } elseif (in_array(strtolower($order->network), ['telecel', 'ishare', 'bigtime']) && Setting::get('codecraft_order_pusher_enabled', 1)) {
-                $codeCraftOrderPusher = new CodeCraftOrderPusherService();
-                $codeCraftOrderPusher->pushOrderToApi($order);
             } else {
                 Log::info('Order pusher disabled for network - skipping API call', ['orderId' => $order->id, 'network' => $order->network]);
             }

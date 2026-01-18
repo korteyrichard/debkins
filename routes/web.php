@@ -157,6 +157,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::put('afa-products/{afaProduct}', [\App\Http\Controllers\AdminDashboardController::class, 'updateAfaProduct'])->name('afa-products.update');
     Route::delete('afa-products/{afaProduct}', [\App\Http\Controllers\AdminDashboardController::class, 'deleteAfaProduct'])->name('afa-products.delete');
     Route::post('toggle-jaybart-order-pusher', [\App\Http\Controllers\AdminDashboardController::class, 'toggleJaybartOrderPusher'])->name('toggle.jaybart.order.pusher');
+    Route::post('toggle-foster-order-pusher', [\App\Http\Controllers\AdminDashboardController::class, 'toggleFosterOrderPusher'])->name('toggle.foster.order.pusher');
     
     // Alert routes
     Route::resource('alerts', \App\Http\Controllers\Admin\AlertController::class);
