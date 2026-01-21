@@ -13,7 +13,7 @@ class FosterOrderPusherService
 
     public function __construct()
     {
-        $this->apiKey = env('FOSTER_API_KEY', '');
+        $this->apiKey = config('services.foster.api_key', '');
         Log::info('FosterOrderPusherService initialized', ['api_key_set' => !empty($this->apiKey)]);
     }
 
@@ -23,9 +23,9 @@ class FosterOrderPusherService
         
         $network = strtoupper($order->network);
         
-        // Only push Telecel, Ishare, and Bigtime orders
-        if (!in_array($network, ['TELECEL', 'ISHARE', 'BIGTIME'])) {
-            Log::info('Skipping non-Foster network order', ['order_id' => $order->id, 'network' => $order->network]);
+        // Only push Ishare orders
+        if ($network !== 'ISHARE') {
+            Log::info('Skipping non-Ishare order', ['order_id' => $order->id, 'network' => $order->network]);
             return;
         }
         
@@ -70,15 +70,8 @@ class FosterOrderPusherService
                 $endpoint = $this->baseUrl . '/buy-ishare-package';
                 $payload = [
                     'recipient_msisdn' => $this->formatPhone($beneficiaryPhone),
-                    'shared_bundle' => $sharedBundle / 1000, // Convert MB to GB for ishare
+                    'shared_bundle' => $sharedBundle, // Send in MB
                     'order_reference' => 'DEB-' . $order->id
-                ];
-            } else {
-                $endpoint = $this->baseUrl . '/buy-other-package';
-                $payload = [
-                    'recipient_msisdn' => $this->formatPhone($beneficiaryPhone),
-                    'network_id' => $networkId,
-                    'shared_bundle' => $sharedBundle
                 ];
             }
             
@@ -104,20 +97,11 @@ class FosterOrderPusherService
                     $responseData = $response->json();
                     
                     // Handle ishare response
-                    if ($network === 'ISHARE' && isset($responseData['vendorTranxId'])) {
+                    if (isset($responseData['vendorTranxId'])) {
                         $order->update(['reference_id' => $responseData['vendorTranxId']]);
                         Log::info('Reference ID saved', [
                             'order_id' => $order->id,
                             'reference_id' => $responseData['vendorTranxId']
-                        ]);
-                    }
-                    
-                    // Handle other networks response
-                    if ($network !== 'ISHARE' && isset($responseData['transaction_code'])) {
-                        $order->update(['reference_id' => $responseData['transaction_code']]);
-                        Log::info('Reference ID saved', [
-                            'order_id' => $order->id,
-                            'reference_id' => $responseData['transaction_code']
                         ]);
                     }
                     
@@ -134,9 +118,9 @@ class FosterOrderPusherService
         
         // Update API status based on results
         if ($hasSuccessfulResponse && !$hasFailedResponse) {
-            $order->update(['api_status' => 'success']);
+            $order->update(['order_pusher_status' => 'success']);
         } elseif ($hasFailedResponse) {
-            $order->update(['api_status' => 'failed']);
+            $order->update(['order_pusher_status' => 'failed']);
         }
     }
     
@@ -155,12 +139,8 @@ class FosterOrderPusherService
     {
         $productName = strtolower($productName);
         
-        if (stripos($productName, 'telecel') !== false) {
-            return 2;
-        } elseif (stripos($productName, 'ishare') !== false) {
+        if (stripos($productName, 'ishare') !== false) {
             return 1;
-        } elseif (stripos($productName, 'bigtime') !== false) {
-            return 4;
         }
         
         return null;

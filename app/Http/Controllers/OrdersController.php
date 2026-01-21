@@ -149,16 +149,21 @@ class OrdersController extends Controller
                 try {
                     $network = strtolower($order->network);
                     
-                    if ($network === 'mtn' && $jaybartEnabled) {
+                    // MTN and Telecel go to Jaybart API
+                    if (in_array($network, ['mtn', 'telecel']) && $jaybartEnabled) {
                         $orderPusher = new OrderPusherService();
                         $orderPusher->pushOrderToApi($order);
                         Log::info('Order pushed to Jaybart API', ['orderId' => $order->id, 'network' => $order->network]);
-                    } elseif (in_array($network, ['telecel', 'ishare', 'bigtime']) && $fosterEnabled) {
+                    } 
+                    // Ishare goes to Foster API
+                    elseif ($network === 'ishare' && $fosterEnabled) {
                         $fosterPusher = new FosterOrderPusherService();
                         $fosterPusher->pushOrderToApi($order);
                         Log::info('Order pushed to Foster API', ['orderId' => $order->id, 'network' => $order->network]);
-                    } else {
-                        Log::info('No enabled order pusher for network', ['orderId' => $order->id, 'network' => $order->network]);
+                    } 
+                    // Bigtime is not pushed anywhere
+                    else {
+                        Log::info('No order pusher for network', ['orderId' => $order->id, 'network' => $order->network]);
                     }
                 } catch (\Exception $e) {
                     $order->update(['order_pusher_status' => 'failed']);

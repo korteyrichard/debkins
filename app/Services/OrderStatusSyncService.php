@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Order;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use App\Services\MoolreSmsService;
 
 class OrderStatusSyncService
 {
@@ -93,8 +94,8 @@ class OrderStatusSyncService
                         'update_successful' => $updateResult
                     ]);
                     
-                    // Send SMS notification if order is completed (skip if network is MTN)
-                    if ($newStatus === 'completed' && $order->user && $order->user->phone && strtoupper($order->network) !== 'MTN') {
+                    // Send SMS notification if order is completed
+                    if ($newStatus === 'completed' && $order->user && $order->user->phone) {
                         try {
                             $message = "Your order #{$order->id} for {$order->network} data has been completed successfully. Thank you for using Affiliatesconnects!";
                             $smsResult = $this->moolreSmsService->sendSms($order->user->phone, $message);

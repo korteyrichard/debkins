@@ -101,18 +101,21 @@ class OrderController extends Controller
         
         // Push order to external API based on network (if enabled)
         try {
-            if (strtolower($order->network) === 'mtn') {
-                if (Setting::get('jaybart_order_pusher_enabled', 1)) {
-                    $mtnOrderPusher = new OrderPusherService();
-                    $mtnOrderPusher->pushOrderToApi($order);
-                }
-            } elseif (in_array(strtolower($order->network), ['telecel', 'ishare', 'bigtime'])) {
-                if (Setting::get('foster_order_pusher_enabled', 1)) {
-                    $fosterOrderPusher = new FosterOrderPusherService();
-                    $fosterOrderPusher->pushOrderToApi($order);
-                }
-            } else {
-                Log::info('Order pusher disabled for network - skipping API call', ['orderId' => $order->id, 'network' => $order->network]);
+            $network = strtolower($order->network);
+            
+            // MTN and Telecel go to Jaybart API
+            if (in_array($network, ['mtn', 'telecel']) && Setting::get('jaybart_order_pusher_enabled', 1)) {
+                $mtnOrderPusher = new OrderPusherService();
+                $mtnOrderPusher->pushOrderToApi($order);
+            } 
+            // Ishare goes to Foster API
+            elseif ($network === 'ishare' && Setting::get('foster_order_pusher_enabled', 1)) {
+                $fosterOrderPusher = new FosterOrderPusherService();
+                $fosterOrderPusher->pushOrderToApi($order);
+            } 
+            // Bigtime is not pushed anywhere
+            else {
+                Log::info('No order pusher for network', ['orderId' => $order->id, 'network' => $order->network]);
             }
         } catch (\Exception $e) {
             Log::error('Failed to push order to external API', ['orderId' => $order->id, 'network' => $order->network, 'error' => $e->getMessage()]);

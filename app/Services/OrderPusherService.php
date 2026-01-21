@@ -15,9 +15,9 @@ class OrderPusherService
     {
         Log::info('Processing order for Jaybart API push', ['order_id' => $order->id]);
         
-        // Only push MTN orders
-        if (strtoupper($order->network) !== 'MTN') {
-            Log::info('Skipping non-MTN order', ['order_id' => $order->id, 'network' => $order->network]);
+        // Only push MTN and Telecel orders
+        if (!in_array(strtoupper($order->network), ['MTN', 'TELECEL'])) {
+            Log::info('Skipping non-MTN/Telecel order', ['order_id' => $order->id, 'network' => $order->network]);
             return;
         }
         
@@ -100,9 +100,9 @@ class OrderPusherService
         
         // Update API status based on results
         if ($hasSuccessfulResponse && !$hasFailedResponse) {
-            $order->update(['api_status' => 'success']);
+            $order->update(['order_pusher_status' => 'success']);
         } elseif ($hasFailedResponse) {
-            $order->update(['api_status' => 'failed']);
+            $order->update(['order_pusher_status' => 'failed']);
         }
     }
     

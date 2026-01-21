@@ -11,6 +11,9 @@ Artisan::command('inspire', function () {
 // Schedule the order status sync command
 Schedule::command('orders:sync-status')->everyFiveMinutes();
 
+// Sync Foster order statuses (Ishare only)
+Schedule::command('orders:sync-foster-status')->everyFiveMinutes();
+
 // Complete bigtime and telecel orders older than 30 minutes
 Schedule::command('orders:complete-old')->everyTenMinutes();
 

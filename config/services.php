@@ -48,4 +48,9 @@ return [
         'api_key' => env('JESCO_API_KEY'),
     ],
 
+    'foster' => [
+        'api_key' => env('FOSTER_API_KEY'),
+        'base_url' => env('FOSTER_BASE_URL', 'https://fgamall.researchershubgh.com/api/v1'),
+    ],
+
 ];
