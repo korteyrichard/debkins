@@ -9,10 +9,15 @@ interface Transaction {
   amount: number;
   description: string;
   created_at: string;
+  order?: {
+    beneficiary_number?: string;
+  };
 }
 
 interface TransactionsPageProps extends PageProps {
   transactions?: Transaction[];
+  filterPhone?: string;
+  filterDate?: string;
 }
 
 const typeLabels: Record<string, string> = {
@@ -32,9 +37,34 @@ const typeColors: Record<string, string> = {
 export default function Transactions({ auth }: TransactionsPageProps) {
   const { transactions = [] } = usePage<TransactionsPageProps>().props;
   const [filter, setFilter] = useState<string>('all');
+  const [filterPhone, setFilterPhone] = useState<string>('');
+  const [filterDate, setFilterDate] = useState<string>('');
 
-  const filteredTransactions =
-    filter === 'all' ? transactions : transactions.filter((t) => t.type === filter);
+  const filteredTransactions = transactions.filter((t) => {
+    // Filter by type
+    if (filter !== 'all' && t.type !== filter) return false;
+    
+    // Filter by phone/beneficiary
+    if (filterPhone && t.order?.beneficiary_number) {
+      if (!t.order.beneficiary_number.includes(filterPhone)) return false;
+    } else if (filterPhone) {
+      return false;
+    }
+    
+    // Filter by date
+    if (filterDate) {
+      const transactionDate = new Date(t.created_at).toISOString().split('T')[0];
+      if (transactionDate !== filterDate) return false;
+    }
+    
+    return true;
+  });
+
+  const handleClearFilters = () => {
+    setFilter('all');
+    setFilterPhone('');
+    setFilterDate('');
+  };
 
   return (
     <DashboardLayout
@@ -52,7 +82,7 @@ export default function Transactions({ auth }: TransactionsPageProps) {
           <div className="bg-white dark:bg-gray-900 shadow-xl rounded-2xl p-6 sm:p-8 border border-gray-100 dark:border-gray-800">
 
             {/* Filter Buttons */}
-            <div className="mb-8 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+            <div className="mb-8 space-y-4">
               <div className="flex flex-wrap justify-center sm:justify-start gap-2">
                 {[
                   { value: 'all', label: 'All', color: 'blue' },
@@ -72,6 +102,37 @@ export default function Transactions({ auth }: TransactionsPageProps) {
                   </button>
                 ))}
               </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Filter by Phone/Beneficiary:</label>
+                  <input
+                    type="text"
+                    className="border rounded px-3 py-2 w-full dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200"
+                    placeholder="Phone or beneficiary number"
+                    value={filterPhone}
+                    onChange={(e) => setFilterPhone(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Filter by Date:</label>
+                  <input
+                    type="date"
+                    className="border rounded px-3 py-2 w-full dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200"
+                    value={filterDate}
+                    onChange={(e) => setFilterDate(e.target.value)}
+                  />
+                </div>
+              </div>
+              
+              <div className="flex gap-2">
+                <button
+                  onClick={handleClearFilters}
+                  className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+                >
+                  Clear Filters
+                </button>
+              </div>
             </div>
 
             {/* Desktop Table */}
@@ -81,6 +142,7 @@ export default function Transactions({ auth }: TransactionsPageProps) {
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date</th>
                     <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Type</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Phone/Beneficiary</th>
                     <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Description</th>
                     <th className="px-6 py-3 text-right text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Amount</th>
                   </tr>
@@ -88,7 +150,7 @@ export default function Transactions({ auth }: TransactionsPageProps) {
                 <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800">
                   {filteredTransactions.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="text-center py-8 text-gray-400 dark:text-gray-500 text-lg">
+                      <td colSpan={5} className="text-center py-8 text-gray-400 dark:text-gray-500 text-lg">
                         No transactions found.
                       </td>
                     </tr>
@@ -102,6 +164,9 @@ export default function Transactions({ auth }: TransactionsPageProps) {
                           <span className={`px-3 py-1 rounded-full text-xs font-bold ${typeColors[t.type] || 'bg-gray-100 text-gray-800'}`}>
                             {typeLabels[t.type] || t.type}
                           </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-gray-600 dark:text-gray-300 text-xs">
+                          {t.order?.beneficiary_number || 'N/A'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-gray-600 dark:text-gray-300">
                           {t.description}

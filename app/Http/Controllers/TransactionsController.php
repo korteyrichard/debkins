@@ -16,12 +16,15 @@ class TransactionsController extends Controller
         $user = Auth::user();
 
     $transactions = Transaction::where('user_id', $user->id)
-        ->select('id', 'type', 'amount', 'description', 'created_at')
+        ->with(['order' => function($query) {
+            $query->select('id', 'beneficiary_number');
+        }])
+        ->select('id', 'type', 'amount', 'description', 'created_at', 'order_id')
         ->latest()
         ->get();
 
     return inertia('Dashboard/transactions', [
-        'transactions' => $transactions
+        'transactions' => $transactions,
     ]);
 }
 

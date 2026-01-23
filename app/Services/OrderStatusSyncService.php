@@ -14,7 +14,7 @@ class OrderStatusSyncService
 
     public function __construct()
     {
-        $this->jaybartApiKey = 'e86efb714fb64202ad66481ea24ee784ce570a05';
+        $this->jaybartApiKey = '';
         $this->moolreSmsService = new MoolreSmsService();
     }
 

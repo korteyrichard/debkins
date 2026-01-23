@@ -299,15 +299,34 @@ class AdminDashboardController extends Controller
      */
     public function transactions(Request $request)
     {
-        $transactions = Transaction::with('user', 'order.user')->latest();
+        $transactions = Transaction::with(['user', 'order' => function($query) {
+            $query->select('id', 'user_id', 'beneficiary_number');
+        }, 'order.user'])->latest();
 
         if ($request->has('type') && $request->input('type') !== '') {
             $transactions->where('type', $request->input('type'));
         }
 
+        if ($request->has('phone') && $request->input('phone') !== '') {
+            $phone = $request->input('phone');
+            $transactions->where(function($query) use ($phone) {
+                $query->whereHas('user', function($q) use ($phone) {
+                    $q->where('phone', 'like', '%' . $phone . '%');
+                })->orWhereHas('order', function($q) use ($phone) {
+                    $q->where('beneficiary_number', 'like', '%' . $phone . '%');
+                });
+            });
+        }
+
+        if ($request->has('date') && $request->input('date') !== '') {
+            $transactions->whereDate('created_at', $request->input('date'));
+        }
+
         return Inertia::render('Admin/Transactions', [
             'transactions' => $transactions->paginate(10),
             'filterType' => $request->input('type', ''),
+            'filterPhone' => $request->input('phone', ''),
+            'filterDate' => $request->input('date', ''),
             'agentFee' => Setting::get('agent_registration_fee', 50),
         ]);
     }

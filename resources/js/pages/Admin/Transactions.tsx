@@ -10,6 +10,7 @@ interface User {
 
 interface Order {
   user: User;
+  beneficiary_number?: string;
 }
 
 interface Transaction {
@@ -42,6 +43,8 @@ interface AdminTransactionsPageProps {
   transactions: PaginatedTransactions;
   auth: any;
   filterType: string;
+  filterPhone: string;
+  filterDate: string;
   agentFee: number;
   [key: string]: any;
 }
@@ -65,15 +68,46 @@ const typeColors: Record<string, string> = {
 };
 
 export default function AdminTransactions() {
-  const { transactions, auth, filterType: initialFilterType, agentFee: initialAgentFee } = usePage<AdminTransactionsPageProps>().props;
+  const { transactions, auth, filterType: initialFilterType, filterPhone: initialFilterPhone, filterDate: initialFilterDate, agentFee: initialAgentFee } = usePage<AdminTransactionsPageProps>().props;
   const [filterType, setFilterType] = useState(initialFilterType);
+  const [filterPhone, setFilterPhone] = useState(initialFilterPhone);
+  const [filterDate, setFilterDate] = useState(initialFilterDate);
   const [agentFee, setAgentFee] = useState(initialAgentFee);
   const [isUpdating, setIsUpdating] = useState(false);
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newFilter = e.target.value;
     setFilterType(newFilter);
-    router.get(route('admin.transactions'), { type: newFilter }, { preserveState: true, replace: true });
+    const params: any = {};
+    if (newFilter) params.type = newFilter;
+    if (filterPhone) params.phone = filterPhone;
+    if (filterDate) params.date = filterDate;
+    router.get(route('admin.transactions'), params, { preserveState: true, replace: true });
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newPhone = e.target.value;
+    setFilterPhone(newPhone);
+  };
+
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newDate = e.target.value;
+    setFilterDate(newDate);
+  };
+
+  const handleApplyFilters = () => {
+    const params: any = {};
+    if (filterType) params.type = filterType;
+    if (filterPhone) params.phone = filterPhone;
+    if (filterDate) params.date = filterDate;
+    router.get(route('admin.transactions'), params, { preserveState: true, replace: true });
+  };
+
+  const handleClearFilters = () => {
+    setFilterType('');
+    setFilterPhone('');
+    setFilterDate('');
+    router.get(route('admin.transactions'), {}, { preserveState: true, replace: true });
   };
 
   const handleAgentFeeUpdate = (e: React.FormEvent) => {
@@ -111,21 +145,58 @@ export default function AdminTransactions() {
             </button>
           </form>
         </div>
-        <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <label className="font-medium">Filter by Type:</label>
-          <select
-            className="border rounded px-3 py-2 w-full sm:w-60"
-            value={filterType}
-            onChange={handleFilterChange}
-          >
-            <option value="" className='text-slate-600'>All Types</option>
-            <option value="topup" className='text-slate-600'>Wallet Top Ups</option>
-            <option value="order" className='text-slate-600'>Order Purchases</option>
-            <option value="agent_fee" className='text-slate-600'>Agent Fees</option>
-            <option value="refund" className='text-slate-600'>Refunds</option>
-            <option value="admin_credit" className='text-slate-600'>Admin Credits</option>
-            <option value="admin_debit" className='text-slate-600'>Admin Debits</option>
-          </select>
+        <div className="mb-4 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className="block font-medium mb-2">Filter by Type:</label>
+              <select
+                className="border rounded px-3 py-2 w-full"
+                value={filterType}
+                onChange={handleFilterChange}
+              >
+                <option value="" className='text-slate-600'>All Types</option>
+                <option value="topup" className='text-slate-600'>Wallet Top Ups</option>
+                <option value="order" className='text-slate-600'>Order Purchases</option>
+                <option value="agent_fee" className='text-slate-600'>Agent Fees</option>
+                <option value="refund" className='text-slate-600'>Refunds</option>
+                <option value="admin_credit" className='text-slate-600'>Admin Credits</option>
+                <option value="admin_debit" className='text-slate-600'>Admin Debits</option>
+              </select>
+            </div>
+            <div>
+              <label className="block font-medium mb-2">Filter by Phone/Beneficiary:</label>
+              <input
+                type="text"
+                className="border rounded px-3 py-2 w-full"
+                placeholder="Phone or beneficiary number"
+                value={filterPhone}
+                onChange={handlePhoneChange}
+              />
+            </div>
+            <div>
+              <label className="block font-medium mb-2">Filter by Date:</label>
+              <input
+                type="date"
+                className="border rounded px-3 py-2 w-full"
+                value={filterDate}
+                onChange={handleDateChange}
+              />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={handleApplyFilters}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Apply Filters
+            </button>
+            <button
+              onClick={handleClearFilters}
+              className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+            >
+              Clear Filters
+            </button>
+          </div>
         </div>
         {transactions.data.length === 0 ? (
           <div>No transactions found.</div>
@@ -136,6 +207,7 @@ export default function AdminTransactions() {
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone/Beneficiary</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
@@ -147,6 +219,7 @@ export default function AdminTransactions() {
                   <tr key={transaction.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200">
                     <td className="px-4 py-3 font-bold">{transaction.id}</td>
                     <td className="px-4 py-3 text-sm">{transaction.user?.name || transaction.order?.user?.name}</td>
+                    <td className="px-4 py-3 text-sm">{transaction.order?.beneficiary_number || 'N/A'}</td>
                     <td className="px-4 py-3 text-sm">${transaction.amount}</td>
                     <td className="px-4 py-3">
                       <span className={`px-3 py-1 rounded-full text-xs font-bold ${typeColors[transaction.type] || 'bg-gray-100 text-gray-800'}`}>

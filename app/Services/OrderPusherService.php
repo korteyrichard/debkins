@@ -8,8 +8,8 @@ use Illuminate\Support\Facades\Log;
 
 class OrderPusherService
 {
-    private $baseUrl = 'https://agent.jaybartservices.com/api/v1';
-    private $apiKey = 'e86efb714fb64202ad66481ea24ee784ce570a05';
+    private $baseUrl = '';
+    private $apiKey = '';
 
     public function pushOrderToApi(Order $order)
     {
