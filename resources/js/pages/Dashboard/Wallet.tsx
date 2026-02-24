@@ -1,8 +1,10 @@
-import React,{useState} from 'react';
+import React, { useState } from 'react';
 import DashboardLayout from '../../layouts/DashboardLayout';
-import { Head, router,usePage } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import { PageProps } from '@/types';
 import { User } from '@/types';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 interface Transaction {
   id: number;
@@ -38,21 +40,20 @@ interface WalletPageProps extends PageProps {
 
 
 export default function Wallet({ auth, transactions, pendingTransactions }: WalletPageProps) {
-     
-     
-
-      const { walletBalance: initialWalletBalance } = usePage<PageProps>().props;
-
-      const [walletBalance, setWalletBalance] = useState(initialWalletBalance ?? 0);
-      const [showAddModal, setShowAddModal] = useState(false);
-      const [addAmount, setAddAmount] = useState('');
-      const [isAdding, setIsAdding] = useState(false);
-      const [addError, setAddError] = useState<string | null>(null);
-      const [verifyingTransactions, setVerifyingTransactions] = useState<Set<number>>(new Set());
 
 
 
-       
+  const { walletBalance: initialWalletBalance } = usePage<PageProps>().props;
+
+  const [walletBalance, setWalletBalance] = useState(initialWalletBalance ?? 0);
+  const [addAmount, setAddAmount] = useState('');
+  const [isAdding, setIsAdding] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
+  const [verifyingTransactions, setVerifyingTransactions] = useState<Set<number>>(new Set());
+
+
+
+
 
   const handleTopUp = () => {
     router.visit('/dashboard/wallet/add');
@@ -61,7 +62,7 @@ export default function Wallet({ auth, transactions, pendingTransactions }: Wall
   const handleVerifyPayment = async (transactionId: number, reference: string) => {
     console.log('Starting verification for:', { transactionId, reference });
     setVerifyingTransactions(prev => new Set(prev).add(transactionId));
-    
+
     try {
       const response = await fetch('/dashboard/wallet/verify-payment', {
         method: 'POST',
@@ -73,16 +74,16 @@ export default function Wallet({ auth, transactions, pendingTransactions }: Wall
         },
         body: JSON.stringify({ reference }),
       });
-      
+
       console.log('Response status:', response.status);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
       console.log('Response data:', data);
-      
+
       if (data.success) {
         alert(data.message);
         router.reload();
@@ -114,21 +115,28 @@ export default function Wallet({ auth, transactions, pendingTransactions }: Wall
     >
       <Head title="Wallet" />
 
-     {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-xs relative border border-gray-200 dark:border-gray-700">
-            <button
-              className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-2xl"
-              onClick={() => setShowAddModal(false)}
-              aria-label="Close"
-            >
-              &times;
-            </button>
-            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">Add to Wallet</h3>
+
+      <div className="py-8 max-w-7xl mx-auto px-4 space-y-8">
+        {/* Wallet Balance Card */}
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-none p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-none">
+          <div>
+            <h3 className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">
+              Wallet Balance
+            </h3>
+            <p className="text-3xl font-bold text-green-500">
+              GHS {auth.user.wallet_balance}
+            </p>
+          </div>
+          <div className="flex flex-col gap-2">
             <form
-              className="flex flex-col gap-3"
+              className="flex flex-col sm:flex-row items-center gap-2"
               onSubmit={async (e) => {
                 e.preventDefault();
+                const amount = parseFloat(addAmount);
+                if (isNaN(amount) || amount <= 0) {
+                  setAddError('Please enter a valid amount.');
+                  return;
+                }
                 setIsAdding(true);
                 setAddError(null);
                 try {
@@ -144,7 +152,6 @@ export default function Wallet({ auth, transactions, pendingTransactions }: Wall
                   });
                   const data = await response.json();
                   if (data.success && data.payment_url) {
-                    // Redirect to Paystack payment page
                     window.location.href = data.payment_url;
                   } else {
                     setAddError(data.message || 'Failed to initialize payment.');
@@ -156,59 +163,42 @@ export default function Wallet({ auth, transactions, pendingTransactions }: Wall
                 }
               }}
             >
-              <input
+              <Input
                 type="number"
                 min="1"
                 step="0.01"
-                className="rounded px-2 py-2 w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
-                placeholder="Amount"
+                className="rounded-none px-3 py-2 w-full sm:w-48 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 shadow-none h-10"
+                placeholder="Enter Amount"
                 value={addAmount}
-                onChange={e => setAddAmount(e.target.value)}
+                onChange={e => {
+                  const val = e.target.value;
+                  if (/^\d*\.?\d*$/.test(val)) {
+                    setAddAmount(val);
+                  }
+                }}
                 required
                 disabled={isAdding}
-                autoFocus
               />
-              <button
+              <Button
                 type="submit"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-none w-full sm:w-auto font-bold uppercase tracking-wider h-10 shadow-none transition-all"
                 disabled={isAdding || !addAmount}
-                
               >
-                {isAdding ? 'Processing...' : 'Top Up'}
-              </button>
-              {addError && <p className="text-red-500 text-xs mt-1">{addError}</p>}
+                {isAdding ? 'Processing...' : 'Top Up Wallet'}
+              </Button>
             </form>
+            {addError && <p className="text-red-500 text-xs">{addError}</p>}
           </div>
-        </div>
-      )}
-    
-      <div className="py-8 max-w-7xl mx-auto px-4 space-y-8">
-        {/* Wallet Balance Card */}
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <h3 className="text-gray-700 dark:text-gray-200 text-lg font-semibold mb-1">
-              Wallet Balance
-            </h3>
-            <p className="text-3xl font-bold text-green-500">
-              GHS {auth.user.wallet_balance}
-            </p>
-          </div>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full sm:w-auto"
-          >
-            Top Up Wallet
-          </button>
         </div>
 
         {/* Transactions Table */}
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-          <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-100">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-none p-6 shadow-none">
+          <h3 className="text-xs font-bold uppercase tracking-widest mb-6 text-gray-500 dark:text-gray-400">
             Wallet Transaction History
           </h3>
 
           <div className="w-full overflow-x-auto">
-            <table className="min-w-full text-sm sm:text-base border border-gray-200 dark:border-gray-700">
+            <table className="min-w-full text-sm sm:text-base border border-gray-200 dark:border-gray-700 rounded-none">
               <thead className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-200">
                 <tr>
                   <th className="p-3 border whitespace-nowrap">ID</th>
@@ -265,11 +255,10 @@ export default function Wallet({ auth, transactions, pendingTransactions }: Wall
               link.url ? (
                 <button
                   key={i}
-                  className={`px-3 py-1 rounded text-sm sm:text-base ${
-                    link.active
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200'
-                  }`}
+                  className={`px-3 py-1 rounded text-sm sm:text-base ${link.active
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200'
+                    }`}
                   dangerouslySetInnerHTML={{ __html: link.label }}
                   onClick={() => router.visit(link.url!)}
                 />

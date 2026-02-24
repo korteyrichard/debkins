@@ -9,9 +9,9 @@ export default function Guest({ children }: PropsWithChildren) {
             <div className="absolute top-4 right-4">
                 <ThemeToggle />
             </div>
-            
 
-            <div className="w-full sm:max-w-md mt-6 px-6 py-4 bg-white dark:bg-gray-800 shadow-md overflow-hidden sm:rounded-lg">
+
+            <div className="w-full sm:max-w-md mt-6 px-6 py-4 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-none shadow-none overflow-hidden">
                 {children}
             </div>
         </div>

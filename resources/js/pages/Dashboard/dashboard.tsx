@@ -61,7 +61,6 @@ export default function Dashboard({ auth }: DashboardProps) {
   const { cartCount, cartItems, walletBalance: initialWalletBalance, orders, totalSales, todaySales, pendingOrders, processingOrders, products, activeAlert } = usePage<DashboardProps>().props;
 
   const [walletBalance, setWalletBalance] = useState(initialWalletBalance ?? 0);
-  const [showAddModal, setShowAddModal] = useState(false);
   const [addAmount, setAddAmount] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
@@ -74,7 +73,7 @@ export default function Dashboard({ auth }: DashboardProps) {
   const [bulkNumbers, setBulkNumbers] = useState('');
   const [excelFile, setExcelFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [availableSizes, setAvailableSizes] = useState<Array<{value: string, label: string, price: number}>>([]);
+  const [availableSizes, setAvailableSizes] = useState<Array<{ value: string, label: string, price: number }>>([]);
   const [loadingSizes, setLoadingSizes] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [showAlert, setShowAlert] = useState(!!activeAlert);
@@ -137,12 +136,12 @@ export default function Dashboard({ auth }: DashboardProps) {
 
   const handleProcessExcel = async () => {
     if (!excelFile) return;
-    
+
     setIsProcessing(true);
     const formData = new FormData();
     formData.append('file', excelFile);
     formData.append('network', selectedNetwork);
-    
+
     try {
       const response = await fetch('/process-excel-to-cart', {
         method: 'POST',
@@ -151,7 +150,7 @@ export default function Dashboard({ auth }: DashboardProps) {
         },
         body: formData,
       });
-      
+
       const data = await response.json();
       if (data.success) {
         setExcelFile(null);
@@ -168,7 +167,7 @@ export default function Dashboard({ auth }: DashboardProps) {
 
   const handleProcessBulk = async () => {
     if (!bulkNumbers.trim()) return;
-    
+
     setIsProcessing(true);
     try {
       const response = await fetch('/process-bulk-to-cart', {
@@ -182,7 +181,7 @@ export default function Dashboard({ auth }: DashboardProps) {
           network: selectedNetwork
         }),
       });
-      
+
       const data = await response.json();
       if (data.success) {
         setBulkNumbers('');
@@ -199,15 +198,15 @@ export default function Dashboard({ auth }: DashboardProps) {
 
   const handleAddSingle = () => {
     if (!phoneNumber || !bundleSize) return;
-    
+
     // Check if phone number already exists in cart
     const existingCartItem = cartItems.find(item => item.beneficiary_number === phoneNumber);
-    
+
     if (existingCartItem) {
       alert('This phone number is already in your cart');
       return;
     }
-    
+
     router.post(route('add.to.cart'), {
       network: selectedNetwork,
       quantity: bundleSize,
@@ -248,13 +247,13 @@ export default function Dashboard({ auth }: DashboardProps) {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
-    
+
     const files = e.dataTransfer.files;
     if (files.length > 0) {
       const file = files[0];
-      if (file.type === 'text/csv' || 
-          file.type === 'application/csv' ||
-          file.name.endsWith('.csv')) {
+      if (file.type === 'text/csv' ||
+        file.type === 'application/csv' ||
+        file.name.endsWith('.csv')) {
         setExcelFile(file);
       } else {
         alert('Please select a valid CSV file (.csv)');
@@ -267,10 +266,10 @@ export default function Dashboard({ auth }: DashboardProps) {
     if (files && files.length > 0) {
       const file = files[0];
       console.log('File selected:', file.name, file.type);
-      
-      if (file.type === 'text/csv' || 
-          file.type === 'application/csv' ||
-          file.name.endsWith('.csv')) {
+
+      if (file.type === 'text/csv' ||
+        file.type === 'application/csv' ||
+        file.name.endsWith('.csv')) {
         setExcelFile(file);
         console.log('CSV file accepted:', file.name);
       } else {
@@ -315,7 +314,7 @@ export default function Dashboard({ auth }: DashboardProps) {
               <div className="mt-6 flex justify-end">
                 <button
                   onClick={() => setShowAlert(false)}
-                  className="px-6 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 transform hover:-translate-y-0.5"
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold uppercase tracking-widest rounded-none transition-all duration-200"
                 >
                   Got it!
                 </button>
@@ -325,73 +324,6 @@ export default function Dashboard({ auth }: DashboardProps) {
         </div>
       )}
 
-      {/* Wallet Add Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-xs relative border border-gray-200 dark:border-gray-700">
-            <button
-              className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-2xl"
-              onClick={() => setShowAddModal(false)}
-              aria-label="Close"
-            >
-              &times;
-            </button>
-            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">Add to Wallet</h3>
-            <form
-              className="flex flex-col gap-3"
-              onSubmit={async (e) => {
-                e.preventDefault();
-                setIsAdding(true);
-                setAddError(null);
-                try {
-                  const response = await fetch('/dashboard/wallet/add', {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                      'Accept': 'application/json',
-                      'X-Requested-With': 'XMLHttpRequest',
-                      'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                    },
-                    body: JSON.stringify({ amount: addAmount }),
-                  });
-                  const data = await response.json();
-                  if (data.success && data.payment_url) {
-                    // Redirect to Paystack payment page
-                    window.location.href = data.payment_url;
-                  } else {
-                    setAddError(data.message || 'Failed to initialize payment.');
-                  }
-                } catch (err) {
-                  setAddError('Error initializing payment.');
-                } finally {
-                  setIsAdding(false);
-                }
-              }}
-            >
-              <input
-                type="number"
-                min="0.01"
-                step="0.01"
-                className="rounded px-2 py-2 w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
-                placeholder="Amount"
-                value={addAmount}
-                onChange={e => setAddAmount(e.target.value)}
-                required
-                disabled={isAdding}
-                autoFocus
-              />
-              <button
-                type="submit"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold"
-                disabled={isAdding || !addAmount}
-              >
-                {isAdding ? 'Processing...' : 'Top Up'}
-              </button>
-              {addError && <p className="text-red-500 text-xs mt-1">{addError}</p>}
-            </form>
-          </div>
-        </div>
-      )}
 
       <div className="py-6 sm:py-8 lg:py-12">
         <div className="w-full px-4 sm:px-6 lg:px-8">
@@ -401,42 +333,103 @@ export default function Dashboard({ auth }: DashboardProps) {
           </div>
           {/* Action Buttons Section */}
           {auth.user.role === 'customer' && (
-          <div className='w-full mb-10'>
-                   <Link
-                      href={route('become_an_agent')}
-                      className="px-6 py-2 text-white font-medium rounded-full bg-gradient-to-r from-purple-600 to-blue-600 hover:bg-gradient-to-r hover:from-blue-600 hover:to-purple-600 hover:text-white hover:-translate-y-0.5 transition-all duration-300"
-                    >
-                      Become An Agent
-                    </Link>
-              </div>)
-           }
+            <div className='w-full mb-10'>
+              <Link
+                href={route('become_an_agent')}
+                className="px-6 py-2 text-white font-bold uppercase tracking-widest rounded-none bg-blue-600 hover:bg-blue-700 transition-all duration-300"
+              >
+                Become An Agent
+              </Link>
+            </div>)
+          }
 
           {/* Stats Cards Section */}
           <div className="mb-8 sm:mb-10">
             <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 sm:gap-4">
               {/* Wallet Balance Card - Featured */}
-              <div className="col-span-2 lg:col-span-2 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg p-4 text-white shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+              <div className="col-span-2 lg:col-span-2 bg-yellow-600 rounded-none p-4 text-white border-b-4 border-yellow-700">
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-xs font-semibold uppercase tracking-wide opacity-90">Wallet Balance</p>
                 </div>
-                <div className="flex items-center justify-between">
-                  <p className="text-lg">GHS {walletBalance}</p>
-                  <button
-                    className="ml-3 py-2 px-4 hover:bg-opacity-20 transition-colors duration-200 cursor-pointer bg-blue-700 hover:bg-blue-600 rounded-[50%] "
-                    onClick={() => setShowAddModal(true)}
-                    aria-label="Add to wallet"
+                <div className="flex flex-col gap-2">
+                  <p className="text-2xl font-bold">GHS {walletBalance}</p>
+                  <form
+                    className="flex items-center gap-2 mt-2"
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      const amount = parseFloat(addAmount);
+                      if (isNaN(amount) || amount <= 0) {
+                        setAddError('Please enter a valid amount.');
+                        return;
+                      }
+                      setIsAdding(true);
+                      setAddError(null);
+                      try {
+                        const response = await fetch('/dashboard/wallet/add', {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                          },
+                          body: JSON.stringify({ amount: addAmount }),
+                        });
+                        const data = await response.json();
+                        if (data.success && data.payment_url) {
+                          window.location.href = data.payment_url;
+                        } else {
+                          setAddError(data.message || 'Failed to initialize payment.');
+                        }
+                      } catch (err) {
+                        setAddError('Error initializing payment.');
+                      } finally {
+                        setIsAdding(false);
+                      }
+                    }}
                   >
-                    <span className="text-2xl font-light">+</span>
-                  </button>
+                    <Input
+                      type="number"
+                      min="1"
+                      step="0.01"
+                      placeholder="Amount"
+                      value={addAmount}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (/^\d*\.?\d*$/.test(val)) {
+                          setAddAmount(val);
+                        }
+                      }}
+                      className="flex-1 h-9 rounded-none border border-white/30 bg-white text-gray-900 px-3 text-sm focus:ring-2 focus:ring-blue-500 shadow-none"
+                      disabled={isAdding}
+                      required
+                    />
+                    <button
+                      type="submit"
+                      className="h-9 w-9 flex items-center justify-center bg-blue-700 hover:bg-blue-800 rounded-none transition-colors disabled:opacity-50"
+                      disabled={isAdding || !addAmount}
+                      title="Top up wallet"
+                    >
+                      {isAdding ? (
+                        <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      ) : (
+                        <span className="text-2xl font-light text-white">+</span>
+                      )}
+                    </button>
+                  </form>
+                  {addError && <p className="text-red-200 text-[10px] mt-1 bg-red-800/20 px-2 py-0.5 rounded">{addError}</p>}
                 </div>
               </div>
-              
+
 
               {/* Stats Cards */}
-              <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-4 text-white shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+              <div className="bg-green-600 rounded-none p-4 text-white border-b-4 border-green-700">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-xs font-semibold uppercase tracking-wide opacity-90">Total Sales</h3>
-                  <div className="p-2 bg-white/20 rounded-lg">
+                  <div className="p-2 bg-white/10 rounded-none">
                     <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                     </svg>
@@ -445,10 +438,10 @@ export default function Dashboard({ auth }: DashboardProps) {
                 <p className="text-lg sm:text-xl font-bold">GHS {totalSales}</p>
               </div>
 
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-4 text-white shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+              <div className="bg-blue-600 rounded-none p-4 text-white border-b-4 border-blue-700">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-xs font-semibold uppercase tracking-wide opacity-90">Today's Sales</h3>
-                  <div className="p-2 bg-white/20 rounded-lg">
+                  <div className="p-2 bg-white/10 rounded-none">
                     <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
                     </svg>
@@ -457,10 +450,10 @@ export default function Dashboard({ auth }: DashboardProps) {
                 <p className="text-lg sm:text-xl font-bold">GHS {todaySales}</p>
               </div>
 
-              <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg p-4 text-white shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+              <div className="bg-orange-600 rounded-none p-4 text-white border-b-4 border-orange-700">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-xs font-semibold uppercase tracking-wide opacity-90">Pending Orders</h3>
-                  <div className="p-2 bg-white/20 rounded-lg">
+                  <div className="p-2 bg-white/10 rounded-none">
                     <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
@@ -469,10 +462,10 @@ export default function Dashboard({ auth }: DashboardProps) {
                 <p className="text-lg sm:text-xl font-bold">{pendingOrders}</p>
               </div>
 
-              <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-4 text-white shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+              <div className="bg-purple-600 rounded-none p-4 text-white border-b-4 border-purple-700">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-xs font-semibold uppercase tracking-wide opacity-90">Processing Orders</h3>
-                  <div className="p-2 bg-white/20 rounded-lg">
+                  <div className="p-2 bg-white/10 rounded-none">
                     <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
@@ -486,9 +479,9 @@ export default function Dashboard({ auth }: DashboardProps) {
 
 
           {/* Place Order Section */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Place Order</h3>
+          <div className="bg-white dark:bg-gray-800 rounded-none shadow-none border border-gray-300 dark:border-gray-600 overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">Place Order</h3>
             </div>
 
             <div className="p-6">
@@ -498,51 +491,47 @@ export default function Dashboard({ auth }: DashboardProps) {
                   <button
                     key={network.id}
                     onClick={() => handleNetworkChange(network.id)}
-                    className={`p-3 sm:p-4 rounded-lg border-2 transition-all duration-200 ${
-                      selectedNetwork === network.id
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                        : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
-                    }`}
+                    className={`p-3 sm:p-4 rounded-none border-t-4 transition-all duration-200 ${selectedNetwork === network.id
+                      ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20'
+                      : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 hover:bg-gray-50'
+                      }`}
                   >
                     <div className="text-center">
-                      <div className={`w-10 h-10 sm:w-12 sm:h-12 ${network.color} flex items-center justify-center mx-auto mb-2 rounded-full`}>
-                        <img src={network.icon} alt={`${network.name} logo`} className="text-white text-lg sm:text-xl rounded-full" />
+                      <div className={`w-10 h-10 sm:w-12 sm:h-12 ${network.color} flex items-center justify-center mx-auto mb-2 rounded-none`}>
+                        <img src={network.icon} alt={`${network.name} logo`} className="text-white text-lg sm:text-xl rounded-none" />
                       </div>
-                      <div className="font-medium text-sm sm:text-base text-gray-900 dark:text-gray-100">{network.name}</div>
+                      <div className="font-bold uppercase tracking-widest text-[10px] text-gray-900 dark:text-gray-100">{network.name}</div>
                     </div>
                   </button>
                 ))}
               </div>
 
               {/* Order Type Selection */}
-              <div className="flex space-x-4 mb-6">
+              <div className="flex mb-6 border border-gray-200 dark:border-gray-700 rounded-none overflow-hidden">
                 <button
                   onClick={() => setOrderType('excel')}
-                  className={`flex-1 p-3 rounded-lg border transition-all duration-200 ${
-                    orderType === 'excel'
-                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-                      : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
-                  }`}
+                  className={`flex-1 p-3 text-xs font-bold uppercase tracking-wider transition-all duration-200 ${orderType === 'excel'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white dark:bg-gray-800 text-gray-500 hover:bg-gray-50'
+                    }`}
                 >
                   📄 CSV
                 </button>
                 <button
                   onClick={() => setOrderType('bulk')}
-                  className={`flex-1 p-3 rounded-lg border transition-all duration-200 ${
-                    orderType === 'bulk'
-                      ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300'
-                      : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
-                  }`}
+                  className={`flex-1 p-3 text-xs font-bold uppercase tracking-wider border-l border-r border-gray-200 dark:border-gray-700 transition-all duration-200 ${orderType === 'bulk'
+                    ? 'bg-orange-600 text-white'
+                    : 'bg-white dark:bg-gray-800 text-gray-500 hover:bg-gray-50'
+                    }`}
                 >
                   📦 Bulk
                 </button>
                 <button
                   onClick={() => setOrderType('single')}
-                  className={`flex-1 p-3 rounded-lg border transition-all duration-200 ${
-                    orderType === 'single'
-                      ? 'border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300'
-                      : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
-                  }`}
+                  className={`flex-1 p-3 text-xs font-bold uppercase tracking-wider transition-all duration-200 ${orderType === 'single'
+                    ? 'bg-green-600 text-white'
+                    : 'bg-white dark:bg-gray-800 text-gray-500 hover:bg-gray-50'
+                    }`}
                 >
                   ➕ Single
                 </button>
@@ -551,12 +540,11 @@ export default function Dashboard({ auth }: DashboardProps) {
               {/* Order Form */}
               {orderType === 'excel' && (
                 <div className="space-y-4">
-                  <div 
-                    className={`border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200 ${
-                      isDragOver 
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
-                        : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'
-                    }`}
+                  <div
+                    className={`border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200 ${isDragOver
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                      : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'
+                      }`}
                     onDragEnter={handleDragEnter}
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
@@ -573,8 +561,8 @@ export default function Dashboard({ auth }: DashboardProps) {
                       className="hidden"
                       id="excel-upload"
                     />
-                    <label 
-                      htmlFor="excel-upload" 
+                    <label
+                      htmlFor="excel-upload"
                       className="cursor-pointer inline-block px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors mb-4"
                     >
                       Choose File
@@ -588,10 +576,10 @@ export default function Dashboard({ auth }: DashboardProps) {
                       Supported format: .csv only
                     </div>
                   </div>
-                  <Button 
+                  <Button
                     onClick={handleProcessExcel}
                     disabled={!excelFile || isProcessing}
-                    className={`w-full ${getNetworkButtonColors(selectedNetwork)} text-white`}
+                    className={`w-full rounded-none h-12 shadow-none font-bold uppercase tracking-widest ${getNetworkButtonColors(selectedNetwork)} text-white`}
                   >
                     {isProcessing ? 'Processing...' : 'Process & Add to Cart'}
                   </Button>
@@ -610,10 +598,10 @@ export default function Dashboard({ auth }: DashboardProps) {
                       className="w-full"
                     />
                   </div>
-                  <Button 
+                  <Button
                     onClick={handleProcessBulk}
                     disabled={!bulkNumbers.trim() || isProcessing}
-                    className={`w-full ${getNetworkButtonColors(selectedNetwork)} text-white`}
+                    className={`w-full rounded-none h-12 shadow-none font-bold uppercase tracking-widest ${getNetworkButtonColors(selectedNetwork)} text-white`}
                   >
                     {isProcessing ? 'Processing...' : 'Add Bulk to Cart'}
                   </Button>
@@ -654,10 +642,10 @@ export default function Dashboard({ auth }: DashboardProps) {
                       </SelectContent>
                     </Select>
                   </div>
-                  <Button 
+                  <Button
                     onClick={handleAddSingle}
                     disabled={!phoneNumber || !bundleSize || isProcessing}
-                    className={`w-full ${getNetworkButtonColors(selectedNetwork)} text-white`}
+                    className={`w-full rounded-none h-12 shadow-none font-bold uppercase tracking-widest ${getNetworkButtonColors(selectedNetwork)} text-white`}
                   >
                     Add to Cart
                   </Button>
@@ -666,15 +654,15 @@ export default function Dashboard({ auth }: DashboardProps) {
             </div>
           </div>
 
-         
+
 
           {/* CART ITEM SECTION....................................................... */}
           {/* CART ITEM SECTION....................................................... */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden mt-8">
-            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+          <div className="bg-white dark:bg-gray-800 rounded-none shadow-none border border-gray-300 dark:border-gray-600 overflow-hidden mt-8">
+            <div className="px-6 py-4 border-b border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50">
               <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">🛒 Cart Items</h3>
-                <span className="text-sm bg-orange-100 text-orange-800 px-2 py-1 rounded-full">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">🛒 Cart Items</h3>
+                <span className="text-[10px] font-bold uppercase tracking-tighter bg-orange-100 text-orange-800 px-2 py-0.5 rounded-none border border-orange-200">
                   {cartCount} items
                 </span>
               </div>
@@ -689,14 +677,13 @@ export default function Dashboard({ auth }: DashboardProps) {
               ) : (
                 <div className="space-y-4">
                   {cartItems.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                    <div key={item.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-none">
                       <div className="flex items-center space-x-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                          item.product.network === 'MTN' ? 'bg-yellow-500' :
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${item.product.network === 'MTN' ? 'bg-yellow-500' :
                           item.product.network === 'TELECEL' ? 'bg-red-500' :
-                          item.product.network === 'ISHARE' ? 'bg-blue-500' :
-                          item.product.network === 'BIGTIME' ? 'bg-purple-500' : 'bg-gray-500'
-                        }`}>
+                            item.product.network === 'ISHARE' ? 'bg-blue-500' :
+                              item.product.network === 'BIGTIME' ? 'bg-purple-500' : 'bg-gray-500'
+                          }`}>
                           <span className="text-white text-xs font-bold">{item.product.network.charAt(0)}</span>
                         </div>
                         <div>
@@ -706,7 +693,7 @@ export default function Dashboard({ auth }: DashboardProps) {
                       </div>
                       <div className="flex items-center space-x-3">
                         <span className="font-bold text-orange-600">GHS {Number(item.product.price || 0).toFixed(2)}</span>
-                        <button 
+                        <button
                           onClick={() => handleRemoveFromCart(item.id)}
                           className="text-red-500 hover:text-red-700"
                         >
@@ -715,15 +702,15 @@ export default function Dashboard({ auth }: DashboardProps) {
                       </div>
                     </div>
                   ))}
-                  
+
                   <div className="border-t pt-4">
                     <div className="flex justify-between items-center mb-4">
                       <span className="text-lg font-semibold">Subtotal:</span>
                       <span className="text-xl font-bold">GHS {cartItems.reduce((sum, item) => sum + Number(item.product.price || 0), 0).toFixed(2)}</span>
                     </div>
-                    <Button 
+                    <Button
                       onClick={() => router.visit('/checkout')}
-                      className={`w-full ${getNetworkButtonColors(selectedNetwork)} text-white font-semibold py-3`}
+                      className={`w-full h-14 rounded-none shadow-none font-bold uppercase tracking-widest text-lg ${getNetworkButtonColors(selectedNetwork)} text-white`}
                     >
                       💳 Make Payment ( GHS {cartItems.reduce((sum, item) => sum + Number(item.product.price || 0), 0).toFixed(2)} )
                     </Button>
