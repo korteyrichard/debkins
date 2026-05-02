@@ -38,6 +38,9 @@ const adminNavigation: NavigationItem[] = [
   { name: "AFA Products", href: route("admin.afa-products"), icon: "Star", current: route().current("admin.afa-products") },
   { name: "AFA Orders", href: route("admin.afa-orders"), icon: "FileText", current: route().current("admin.afa-orders") },
   { name: "Transactions", href: route("admin.transactions"), icon: "Receipt", current: route().current("admin.transactions") },
+  { name: "Withdrawals", href: route("admin.withdrawals"), icon: "Banknote", current: route().current("admin.withdrawals") },
+  { name: "Commissions", href: route("admin.commissions"), icon: "Coins", current: route().current("admin.commissions") },
+  { name: "Agent Settings", href: route("admin.settings"), icon: "Wrench", current: route().current("admin.settings") },
   { name: "Settings", href: route("profile.edit"), icon: "Settings", current: route().current("profile.edit") || route().current("password.edit") || route().current("appearance") },
 ];
 

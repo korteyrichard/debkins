@@ -7,7 +7,7 @@ use Carbon\Carbon;
 
 class Order extends Model
 {
-    protected $fillable = ['user_id', 'total', 'status', 'beneficiary_number', 'network', 'reference_id', 'order_pusher_status'];
+    protected $fillable = ['user_id', 'agent_id', 'total', 'status', 'beneficiary_number', 'network', 'reference_id', 'order_pusher_status'];
     
     protected $casts = [
         'created_at' => 'datetime:Y-m-d H:i:s',
@@ -47,5 +47,32 @@ class Order extends Model
         return $this->belongsToMany(Product::class, 'order_product')
             ->withPivot('quantity', 'price', 'beneficiary_number', 'product_variant_id')
             ->withTimestamps();
+    }
+
+    public function agent()
+    {
+        return $this->belongsTo(User::class, 'agent_id');
+    }
+
+    public function commissions()
+    {
+        return $this->hasMany(\App\Models\Commission::class);
+    }
+
+    public function agentProduct()
+    {
+        $orderProduct = $this->products()->first();
+        if (!$orderProduct || !$this->agent_id) {
+            return null;
+        }
+
+        $shop = \App\Models\AgentShop::where('user_id', $this->agent_id)->first();
+        if (!$shop) {
+            return null;
+        }
+
+        return \App\Models\AgentProduct::where('agent_shop_id', $shop->id)
+            ->where('product_variant_id', $orderProduct->pivot->product_variant_id)
+            ->first();
     }
 }

@@ -33,13 +33,14 @@ interface WalletPageProps extends PageProps {
     }[];
   };
   pendingTransactions: Transaction[];
+  youtubeVerifyTopupUrl?: string;
 }
 
 
 
 
 
-export default function Wallet({ auth, transactions, pendingTransactions }: WalletPageProps) {
+export default function Wallet({ auth, transactions, pendingTransactions, youtubeVerifyTopupUrl }: WalletPageProps) {
 
 
 
@@ -59,47 +60,20 @@ export default function Wallet({ auth, transactions, pendingTransactions }: Wall
     router.visit('/dashboard/wallet/add');
   };
 
-  const handleVerifyPayment = async (transactionId: number, reference: string) => {
+  const handleVerifyPayment = (transactionId: number, reference: string) => {
     console.log('Starting verification for:', { transactionId, reference });
     setVerifyingTransactions(prev => new Set(prev).add(transactionId));
 
-    try {
-      const response = await fetch('/dashboard/wallet/verify-payment', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest',
-          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-        },
-        body: JSON.stringify({ reference }),
-      });
-
-      console.log('Response status:', response.status);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log('Response data:', data);
-
-      if (data.success) {
-        alert(data.message);
-        router.reload();
-      } else {
-        alert(data.message || 'Verification failed');
-      }
-    } catch (error) {
-      console.error('Verification error:', error);
-      alert('Error verifying payment: ' + error.message);
-    } finally {
-      setVerifyingTransactions(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(transactionId);
-        return newSet;
-      });
-    }
+    router.post('/dashboard/wallet/verify-payment', { reference }, {
+      onFinish: () => {
+        setVerifyingTransactions(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(transactionId);
+          return newSet;
+        });
+      },
+      preserveScroll: true
+    });
   };
 
   const user = auth.user;
@@ -130,7 +104,7 @@ export default function Wallet({ auth, transactions, pendingTransactions }: Wall
           <div className="flex flex-col gap-2">
             <form
               className="flex flex-col sm:flex-row items-center gap-2"
-              onSubmit={async (e) => {
+              onSubmit={(e) => {
                 e.preventDefault();
                 const amount = parseFloat(addAmount);
                 if (isNaN(amount) || amount <= 0) {
@@ -139,28 +113,13 @@ export default function Wallet({ auth, transactions, pendingTransactions }: Wall
                 }
                 setIsAdding(true);
                 setAddError(null);
-                try {
-                  const response = await fetch('/dashboard/wallet/add', {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                      'Accept': 'application/json',
-                      'X-Requested-With': 'XMLHttpRequest',
-                      'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                    },
-                    body: JSON.stringify({ amount: addAmount }),
-                  });
-                  const data = await response.json();
-                  if (data.success && data.payment_url) {
-                    window.location.href = data.payment_url;
-                  } else {
-                    setAddError(data.message || 'Failed to initialize payment.');
+                
+                router.post('/dashboard/wallet/add', { amount: addAmount }, {
+                  onFinish: () => setIsAdding(false),
+                  onError: (errors) => {
+                    setAddError(Object.values(errors)[0]);
                   }
-                } catch (err) {
-                  setAddError('Error initializing payment.');
-                } finally {
-                  setIsAdding(false);
-                }
+                });
               }}
             >
               <Input
@@ -188,6 +147,17 @@ export default function Wallet({ auth, transactions, pendingTransactions }: Wall
               </Button>
             </form>
             {addError && <p className="text-red-500 text-xs">{addError}</p>}
+            {youtubeVerifyTopupUrl && (
+              <a
+                href={youtubeVerifyTopupUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-red-600 hover:underline"
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                How to Verify Top Up
+              </a>
+            )}
           </div>
         </div>
 

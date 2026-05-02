@@ -134,7 +134,7 @@ export default function Dashboard({ auth }: DashboardProps) {
     fetchBundleSizes(selectedNetwork);
   }, []);
 
-  const handleProcessExcel = async () => {
+  const handleProcessExcel = () => {
     if (!excelFile) return;
 
     setIsProcessing(true);
@@ -142,58 +142,33 @@ export default function Dashboard({ auth }: DashboardProps) {
     formData.append('file', excelFile);
     formData.append('network', selectedNetwork);
 
-    try {
-      const response = await fetch('/process-excel-to-cart', {
-        method: 'POST',
-        headers: {
-          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-        },
-        body: formData,
-      });
-
-      const data = await response.json();
-      if (data.success) {
+    router.post('/process-excel-to-cart', formData, {
+      onFinish: () => setIsProcessing(false),
+      onSuccess: () => {
         setExcelFile(null);
-        router.reload();
-      } else {
-        alert(data.message || 'Failed to process Excel file');
+      },
+      onError: (errors) => {
+        alert(Object.values(errors)[0] || 'Failed to process Excel file');
       }
-    } catch (error) {
-      alert('Error processing Excel file');
-    } finally {
-      setIsProcessing(false);
-    }
+    });
   };
 
-  const handleProcessBulk = async () => {
+  const handleProcessBulk = () => {
     if (!bulkNumbers.trim()) return;
 
     setIsProcessing(true);
-    try {
-      const response = await fetch('/process-bulk-to-cart', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-        },
-        body: JSON.stringify({
-          numbers: bulkNumbers,
-          network: selectedNetwork
-        }),
-      });
-
-      const data = await response.json();
-      if (data.success) {
+    router.post('/process-bulk-to-cart', {
+      numbers: bulkNumbers,
+      network: selectedNetwork
+    }, {
+      onFinish: () => setIsProcessing(false),
+      onSuccess: () => {
         setBulkNumbers('');
-        router.reload();
-      } else {
-        alert(data.message || 'Failed to process bulk numbers');
+      },
+      onError: (errors) => {
+        alert(Object.values(errors)[0] || 'Failed to process bulk numbers');
       }
-    } catch (error) {
-      alert('Error processing bulk numbers');
-    } finally {
-      setIsProcessing(false);
-    }
+    });
   };
 
   const handleAddSingle = () => {
@@ -355,7 +330,7 @@ export default function Dashboard({ auth }: DashboardProps) {
                   <p className="text-2xl font-bold">GHS {walletBalance}</p>
                   <form
                     className="flex items-center gap-2 mt-2"
-                    onSubmit={async (e) => {
+                    onSubmit={(e) => {
                       e.preventDefault();
                       const amount = parseFloat(addAmount);
                       if (isNaN(amount) || amount <= 0) {
@@ -364,28 +339,13 @@ export default function Dashboard({ auth }: DashboardProps) {
                       }
                       setIsAdding(true);
                       setAddError(null);
-                      try {
-                        const response = await fetch('/dashboard/wallet/add', {
-                          method: 'POST',
-                          headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                          },
-                          body: JSON.stringify({ amount: addAmount }),
-                        });
-                        const data = await response.json();
-                        if (data.success && data.payment_url) {
-                          window.location.href = data.payment_url;
-                        } else {
-                          setAddError(data.message || 'Failed to initialize payment.');
+                      
+                      router.post('/dashboard/wallet/add', { amount: addAmount }, {
+                        onFinish: () => setIsAdding(false),
+                        onError: (errors) => {
+                          setAddError(Object.values(errors)[0]);
                         }
-                      } catch (err) {
-                        setAddError('Error initializing payment.');
-                      } finally {
-                        setIsAdding(false);
-                      }
+                      });
                     }}
                   >
                     <Input

@@ -45,7 +45,13 @@ export default function DashboardLayout({ user, header, children }: DashboardLay
         { name: 'Orders', href: route('dashboard.orders'), icon: 'Package', current: route().current('dashboard.orders') },
         { name: 'Afa', href: route('dashboard.afa'), icon: 'Receipt', current: route().current('dashboard.afa') },
         { name: 'Transactions', href: route('dashboard.transactions'), icon: 'Receipt', current: route().current('dashboard.transactions') },
-        ...(user.role === 'agent' || user.role === 'admin' ? [{ name: 'API Docs', href: route('dashboard.api-docs'), icon: 'Code' as IconName, current: route().current('dashboard.api-docs') }] : []),
+        ...(user.role !== 'customer' ? [{ name: 'API Docs', href: route('dashboard.api-docs'), icon: 'Code' as IconName, current: route().current('dashboard.api-docs') }] : []),
+        ...(user.role !== 'customer' ? [
+            { name: 'Store Dashboard', href: route('agent.dashboard'), icon: 'Store' as IconName, current: route().current('agent.dashboard') },
+            { name: 'Shop Products', href: route('agent.products'), icon: 'ShoppingBag' as IconName, current: route().current('agent.products') },
+            { name: 'Commissions', href: route('agent.commissions'), icon: 'Coins' as IconName, current: route().current('agent.commissions') },
+            { name: 'Referrals', href: route('agent.referrals'), icon: 'Users' as IconName, current: route().current('agent.referrals') },
+        ] : []),
         { name: 'Settings', href: route('profile.edit'), icon: 'Settings', current: route().current('profile.edit') || route().current('password.edit') || route().current('appearance') },
         { name: 'Terms of service', href: route('dashboard.terms'), icon: 'Lock', current: false },
 
@@ -89,7 +95,7 @@ export default function DashboardLayout({ user, header, children }: DashboardLay
                     </div>
                 </Link>
             </div>
-            <nav className="mt-5 flex-1 flex flex-col min-h-screen">
+            <nav className="mt-5 flex-1 flex flex-col overflow-y-auto">
                 <div className="px-2 space-y-1">
                     {renderNavigationItems(navigation, isMobile)}
                 </div>
@@ -113,7 +119,7 @@ export default function DashboardLayout({ user, header, children }: DashboardLay
         <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
             {/* Sidebar for desktop */}
             <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
-                <div className="shadow-md">
+                <div className="shadow-md h-full overflow-y-auto">
                     <SidebarContent />
                 </div>
             </div>

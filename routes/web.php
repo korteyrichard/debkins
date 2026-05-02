@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BecomeAgentController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\AgentController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Models\Cart;
@@ -147,7 +148,9 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::put('orders/{order}/status', [\App\Http\Controllers\AdminDashboardController::class, 'updateOrderStatus'])->name('orders.updateStatus');
     Route::put('orders/bulk-status', [\App\Http\Controllers\AdminDashboardController::class, 'bulkUpdateOrderStatus'])->name('orders.bulkUpdateStatus');
     Route::get('transactions', [\App\Http\Controllers\AdminDashboardController::class, 'transactions'])->name('transactions');
-    Route::post('agent-fee', [\App\Http\Controllers\AdminDashboardController::class, 'updateAgentFee'])->name('agent-fee.update');
+    Route::post('agent-fee', [\App\Http\Controllers\Admin\SettingsController::class, 'update'])->name('agent-fee.update');
+    Route::get('settings', [\App\Http\Controllers\Admin\SettingsController::class, 'index'])->name('settings');
+    Route::post('settings', [\App\Http\Controllers\Admin\SettingsController::class, 'update'])->name('settings.update');
     Route::get('users/{user}/transactions', [\App\Http\Controllers\AdminDashboardController::class, 'userTransactions'])->name('users.transactions');
     Route::post('orders/export', [\App\Http\Controllers\AdminDashboardController::class, 'exportOrders'])->name('orders.export');
     Route::get('afa-orders', [\App\Http\Controllers\AdminDashboardController::class, 'afaOrders'])->name('afa-orders');
@@ -161,6 +164,36 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     
     // Alert routes
     Route::resource('alerts', \App\Http\Controllers\Admin\AlertController::class);
+
+    // Agent withdrawal management
+    Route::get('withdrawals', [\App\Http\Controllers\Admin\AgentWithdrawalController::class, 'index'])->name('withdrawals');
+    Route::post('withdrawals/{withdrawal}/process', [\App\Http\Controllers\Admin\AgentWithdrawalController::class, 'process'])->name('withdrawals.process');
+    Route::get('commissions', [\App\Http\Controllers\Admin\CommissionController::class, 'index'])->name('commissions');
+});
+
+// Agent routes (requires agent role)
+Route::middleware(['auth', 'verified', 'role:agent,admin,dealer'])->prefix('agent')->name('agent.')->group(function () {
+    Route::get('dashboard', [AgentController::class, 'dashboard'])->name('dashboard');
+    Route::post('shop', [AgentController::class, 'createShop'])->name('shop.create');
+    Route::put('shop', [AgentController::class, 'updateShop'])->name('shop.update');
+    Route::get('products', [AgentController::class, 'shopProducts'])->name('products');
+    Route::post('products', [AgentController::class, 'addProduct'])->name('products.add');
+    Route::delete('products/{agentProduct}', [AgentController::class, 'removeProduct'])->name('products.remove');
+    Route::post('withdrawals', [AgentController::class, 'requestWithdrawal'])->name('withdrawals.request');
+    Route::get('referrals', [AgentController::class, 'referrals'])->name('referrals');
+    Route::get('commissions', [AgentController::class, 'commissions'])->name('commissions');
+});
+
+// Public agent shop routes
+Route::get('/shop/payment/callback', [AgentController::class, 'handleShopPaymentCallback'])->name('shop.payment.callback');
+Route::get('/shop/order/success', [AgentController::class, 'orderSuccess'])->name('shop.order.success');
+Route::get('/shop/order/failed', [AgentController::class, 'orderFailed'])->name('shop.order.failed');
+Route::get('/shop/{slug}', [AgentController::class, 'viewShop'])->name('shop.view');
+Route::post('/shop/{slug}/track', [AgentController::class, 'trackOrder'])->name('shop.track.search');
+Route::post('/shop/{slug}/create-order', [AgentController::class, 'createOrderFromReference'])->name('shop.track.create');
+Route::post('/shop/{slug}/purchase', [AgentController::class, 'purchaseFromShop'])->name('shop.purchase');
+Route::middleware(['auth'])->group(function () {
+    Route::post('/upgrade-to-agent', [AgentController::class, 'upgradeToAgent'])->name('upgrade.to.agent');
 });
 
 // Paystack payment routes

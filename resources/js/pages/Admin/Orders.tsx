@@ -22,6 +22,7 @@ interface Order {
   created_at: string;
   network?: string;
   beneficiary_number?: string;
+  reference?: string;
   order_pusher_status: 'disabled' | 'success' | 'failed' | null | undefined;
   products: Product[];
   user?: {
@@ -328,6 +329,7 @@ export default function AdminOrders() {
                   <th className="px-3 py-3 border border-slate-600">Network</th>
                   <th className="px-3 py-3 border border-slate-600">Status</th>
                   <th className="px-3 py-3 border border-slate-600">API Status</th>
+                  <th className="px-3 py-3 border border-slate-600">Reference</th>
                   <th className="px-3 py-3 border border-slate-600">Size</th>
                   <th className="px-3 py-3 text-right border border-slate-600">Actions</th>
                 </tr>
@@ -382,6 +384,9 @@ export default function AdminOrders() {
                     </td>
                     <td className={`px-3 py-3 rounded ${getOrderPusherStatusColor(order.order_pusher_status || 'disabled')} font-medium text-xs border border-slate-600`}>
                       {order.order_pusher_status ? order.order_pusher_status.charAt(0).toUpperCase() + order.order_pusher_status.slice(1) : 'Disabled'}
+                    </td>
+                    <td className="px-3 py-3 border border-slate-600">
+                      <span className="text-xs font-mono break-all">{order.reference || '-'}</span>
                     </td>
                     <td className="px-3 py-3 border border-slate-600">
                       <div className="space-y-1">

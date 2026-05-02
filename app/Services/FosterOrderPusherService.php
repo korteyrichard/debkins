@@ -8,12 +8,13 @@ use Illuminate\Support\Facades\Log;
 
 class FosterOrderPusherService
 {
-    private $baseUrl = 'https://fgamall.researchershubgh.com/api/v1';
+    private $baseUrl;
     private $apiKey;
 
     public function __construct()
     {
         $this->apiKey = config('services.foster.api_key', '');
+        $this->baseUrl = config('services.foster.base_url', 'https://fgamall.researchershubgh.com/api/v1');
         Log::info('FosterOrderPusherService initialized', ['api_key_set' => !empty($this->apiKey)]);
     }
 
@@ -67,11 +68,11 @@ class FosterOrderPusherService
 
             // Determine endpoint based on network
             if ($network === 'ISHARE') {
-                $endpoint = $this->baseUrl . '/buy-ishare-package';
+                $endpoint = $this->baseUrl . '/createIshareBundleOrder';
                 $payload = [
-                    'recipient_msisdn' => $this->formatPhone($beneficiaryPhone),
-                    'shared_bundle' => $sharedBundle, // Send in MB
-                    'order_reference' => 'DEB-' . $order->id
+                    'reference' => 'DEB-' . $order->id . '-' . $item->id,
+                    'msisdn' => $this->formatPhone($beneficiaryPhone),
+                    'capacity' => $sharedBundle,
                 ];
             }
             
@@ -82,11 +83,10 @@ class FosterOrderPusherService
             ]);
 
             try {
-                $response = Http::withHeaders([
-                    'x-api-key' => $this->apiKey,
-                    'Accept' => 'application/json',
-                    'Content-Type' => 'application/json'
-                ])->timeout(30)->post($endpoint, $payload);
+                $response = Http::withToken($this->apiKey)
+                    ->accept('application/json')
+                    ->timeout(30)
+                    ->post($endpoint, $payload);
 
                 Log::info('Foster API Response', [
                     'status_code' => $response->status(),
@@ -96,12 +96,13 @@ class FosterOrderPusherService
                 if ($response->successful()) {
                     $responseData = $response->json();
                     
-                    // Handle ishare response
-                    if (isset($responseData['vendorTranxId'])) {
-                        $order->update(['reference_id' => $responseData['vendorTranxId']]);
+                    // Handle response - new API returns reference in data.reference
+                    $ref = $responseData['data']['reference'] ?? ($responseData['vendorTranxId'] ?? null);
+                    if ($ref) {
+                        $order->update(['reference_id' => $ref]);
                         Log::info('Reference ID saved', [
                             'order_id' => $order->id,
-                            'reference_id' => $responseData['vendorTranxId']
+                            'reference_id' => $ref
                         ]);
                     }
                     

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Transaction;
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
@@ -25,6 +26,7 @@ class WalletController extends Controller
                 ->select('id', 'amount', 'status', 'type', 'description', 'reference', 'created_at')
                 ->latest()
                 ->get(),
+            'youtubeVerifyTopupUrl' => Setting::get('youtube_verify_topup_url', ''),
         ]);
     }
 
@@ -59,10 +61,7 @@ class WalletController extends Controller
                 'user_topup_transactions' => $userTransactions
             ]);
             
-            return response()->json([
-                'success' => false,
-                'message' => 'Transaction not found'
-            ]);
+            return back()->with('error', 'Transaction not found');
         }
 
         \Log::info('Transaction found', ['transaction_id' => $transaction->id, 'status' => $transaction->status]);
@@ -70,10 +69,7 @@ class WalletController extends Controller
         // If already completed, prevent double crediting
         if ($transaction->status === 'completed') {
             \Log::info('Transaction already completed');
-            return response()->json([
-                'success' => false,
-                'message' => 'Transaction already verified'
-            ]);
+            return back()->with('info', 'Transaction already verified');
         }
 
         \Log::info('About to call Paystack API', ['reference' => $reference]);
@@ -103,30 +99,17 @@ class WalletController extends Controller
                     $user->increment('wallet_balance', $transaction->amount);
                 });
 
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Payment verified and balance updated'
-                ]);
+                return back()->with('success', 'Payment verified and balance updated');
             } else {
                 // Update transaction with Paystack reference even if failed
                 if (isset($paystackData['data']['reference'])) {
                     $transaction->update(['reference' => $paystackData['data']['reference']]);
                 }
                 
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Payment verification failed or transaction not successful',
-                    'debug' => [
-                        'paystack_response' => $paystackData,
-                        'reference' => $reference
-                    ]
-                ]);
+                return back()->with('error', 'Payment verification failed');
             }
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error verifying payment: ' . $e->getMessage()
-            ]);
+            return back()->with('error', 'Error verifying payment: ' . $e->getMessage());
         }
     }
 }

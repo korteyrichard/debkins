@@ -6,23 +6,18 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::table('orders', function (Blueprint $table) {
-            $table->enum('order_pusher_status', ['disabled', 'success', 'failed'])->default('disabled')->after('reference_id');
+            $table->foreignId('agent_id')->nullable()->after('user_id')->constrained('users')->nullOnDelete();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::table('orders', function (Blueprint $table) {
-            $table->dropColumn('order_pusher_status');
+            $table->dropForeign(['agent_id']);
+            $table->dropColumn('agent_id');
         });
     }
 };

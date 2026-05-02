@@ -8,12 +8,13 @@ use Illuminate\Support\Facades\Log;
 
 class FosterOrderStatusSyncService
 {
-    private $baseUrl = 'https://fgamall.researchershubgh.com/api/v1';
+    private $baseUrl;
     private $apiKey;
 
     public function __construct()
     {
         $this->apiKey = config('services.foster.api_key', '');
+        $this->baseUrl = config('services.foster.base_url', 'https://fgamall.researchershubgh.com/api/v1');
     }
 
     public function syncOrderStatus(Order $order)
@@ -40,21 +41,17 @@ class FosterOrderStatusSyncService
 
     private function syncIshareOrder(Order $order)
     {
-        $endpoint = $this->baseUrl . '/fetch-ishare-transaction';
-        $payload = ['transaction_id' => $order->reference_id];
+        $endpoint = $this->baseUrl . '/checkOrderStatus/' . $order->reference_id;
 
-        Log::info('Fetching ishare transaction status', [
+        Log::info('Fetching order status', [
             'order_id' => $order->id,
-            'transaction_id' => $order->reference_id,
-            'api_key_length' => strlen($this->apiKey),
-            'api_key_set' => !empty($this->apiKey)
+            'reference' => $order->reference_id,
         ]);
 
-        $response = Http::withHeaders([
-            'x-api-key' => $this->apiKey,
-            'Accept' => 'application/json',
-            'Content-Type' => 'application/json'
-        ])->timeout(30)->post($endpoint, $payload);
+        $response = Http::withToken($this->apiKey)
+            ->accept('application/json')
+            ->timeout(30)
+            ->get($endpoint);
 
         Log::info('Foster API sync response', [
             'order_id' => $order->id,
@@ -65,12 +62,20 @@ class FosterOrderStatusSyncService
         if ($response->successful()) {
             $data = $response->json();
             
-            // Update order status based on API response
-            if (isset($data['response_code']) && $data['response_code'] == '200') {
-                $order->update(['status' => 'completed']);
-                Log::info('Order marked as completed', ['order_id' => $order->id]);
+            if (isset($data['success']) && $data['success'] === true && isset($data['data']['status'])) {
+                $apiStatus = strtolower($data['data']['status']);
+                
+                if ($apiStatus === 'completed' || $apiStatus === 'delivered') {
+                    $order->update(['status' => 'completed']);
+                    Log::info('Order marked as completed', ['order_id' => $order->id]);
+                } elseif ($apiStatus === 'failed') {
+                    $order->update(['status' => 'failed']);
+                    Log::info('Order marked as failed', ['order_id' => $order->id]);
+                } else {
+                    Log::info('Order still pending', ['order_id' => $order->id, 'api_status' => $apiStatus]);
+                }
             } else {
-                Log::info('Transaction not successful', ['order_id' => $order->id, 'response' => $data]);
+                Log::info('Unexpected response structure', ['order_id' => $order->id, 'response' => $data]);
             }
         } else {
             Log::warning('Failed to fetch transaction status', [

@@ -18,9 +18,11 @@ class RegisteredUserController extends Controller
     /**
      * Show the registration page.
      */
-    public function create(): Response
+    public function create(Request $request): Response
     {
-        return Inertia::render('auth/register');
+        return Inertia::render('auth/register', [
+            'referralCode' => $request->query('ref'),
+        ]);
     }
 
     /**
@@ -38,12 +40,21 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
+        $referredBy = null;
+        if ($request->referral_code) {
+            $referrer = User::where('referral_code', $request->referral_code)->first();
+            if ($referrer) {
+                $referredBy = $referrer->id;
+            }
+        }
+
         $user = User::create([
             'name' => $request->name,
             'business_name' => $request->business_name,
             'phone' => $request->phone,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'referred_by' => $referredBy,
         ]);
 
         event(new Registered($user));

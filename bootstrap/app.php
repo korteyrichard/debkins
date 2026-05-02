@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\DomainRestriction;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\RoleMiddleware;
@@ -20,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('orders:sync-status')->everyThirtyMinutes();
     })
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->prepend(DomainRestriction::class);
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
         // Aliases for custom middleware

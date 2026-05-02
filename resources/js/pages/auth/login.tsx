@@ -30,7 +30,6 @@ export default function Login() {
             <div className="text-center mb-8">
                 <img src='/affiliatesconnects.jpg' alt="Affiliates Connects Logo" className="w-40 h-20 mx-auto mb-4 rounded-none" />
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 uppercase tracking-tight">Sign In</h2>
-                <p className="text-sm text-gray-500 mt-2">Welcome back to Debkins</p>
             </div>
             <form onSubmit={submit} className="space-y-6">
                 <div>

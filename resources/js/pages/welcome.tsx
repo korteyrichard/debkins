@@ -92,7 +92,7 @@ export default function Welcome() {
         fetchBundleSizes(networkId);
     };
 
-    const handleProcessExcel = async () => {
+    const handleProcessExcel = () => {
         if (!auth.user) {
             router.visit(route('login'));
             return;
@@ -105,30 +105,20 @@ export default function Welcome() {
         formData.append('file', excelFile);
         formData.append('network', selectedNetwork);
         
-        try {
-            const response = await fetch('/process-excel-to-cart', {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                },
-                body: formData,
-            });
-            
-            const data = await response.json();
-            if (data.success) {
+        router.post('/process-excel-to-cart', formData, {
+            onFinish: () => setIsProcessing(true), // Keep true until redirect
+            onSuccess: () => {
                 setExcelFile(null);
-                router.reload();
-            } else {
-                alert(data.message || 'Failed to process Excel file');
+                setIsProcessing(false);
+            },
+            onError: (errors) => {
+                setIsProcessing(false);
+                alert(Object.values(errors)[0] || 'Failed to process Excel file');
             }
-        } catch (error) {
-            alert('Error processing Excel file');
-        } finally {
-            setIsProcessing(false);
-        }
+        });
     };
 
-    const handleProcessBulk = async () => {
+    const handleProcessBulk = () => {
         if (!auth.user) {
             router.visit(route('login'));
             return;
@@ -137,31 +127,18 @@ export default function Welcome() {
         if (!bulkNumbers.trim()) return;
         
         setIsProcessing(true);
-        try {
-            const response = await fetch('/process-bulk-to-cart', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                },
-                body: JSON.stringify({
-                    numbers: bulkNumbers,
-                    network: selectedNetwork
-                }),
-            });
-            
-            const data = await response.json();
-            if (data.success) {
+        router.post('/process-bulk-to-cart', {
+            numbers: bulkNumbers,
+            network: selectedNetwork
+        }, {
+            onFinish: () => setIsProcessing(false),
+            onSuccess: () => {
                 setBulkNumbers('');
-                router.reload();
-            } else {
-                alert(data.message || 'Failed to process bulk numbers');
+            },
+            onError: (errors) => {
+                alert(Object.values(errors)[0] || 'Failed to process bulk numbers');
             }
-        } catch (error) {
-            alert('Error processing bulk numbers');
-        } finally {
-            setIsProcessing(false);
-        }
+        });
     };
 
     const handleAddSingle = () => {
@@ -270,7 +247,7 @@ export default function Welcome() {
 
     return (
         <>
-            <Head title="debkinsdata - become a data reseller">
+            <Head title="Affiliatestores">
                 <link rel="preconnect" href="https://fonts.bunny.net" />
                 <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700,800,900" rel="stylesheet" />
             </Head>

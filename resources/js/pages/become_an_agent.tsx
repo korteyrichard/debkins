@@ -18,10 +18,10 @@ export default function BecomeAnAgent() {
                 <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-10 max-w-2xl text-center space-y-6">
                     <img src='/affiliatesconnects.jpg' alt="Affiliates Connects Logo" className="w-20 h-20 mx-auto mb-4 rounded-lg" />
                     <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 dark:text-gray-100">
-                        Gain Api Access
+                        Become an Agent
                     </h1>
                     <p className="text-gray-600 dark:text-gray-300 text-lg">
-                        getting access to our API means faster order processing from your website and cheaper price for data bundles.
+                        Becoming an agent gives you access to our API for faster order processing from your website and cheaper prices for data bundles.
                     </p>
 
                     <form onSubmit={handleBecomeAgent}>
@@ -31,7 +31,7 @@ export default function BecomeAnAgent() {
                             disabled={processing}
                             className="inline-block mt-4 px-8 py-4 bg-blue-600 text-white text-lg font-semibold rounded-full shadow-md hover:bg-blue-700 hover:-translate-y-1 transition-all duration-300 disabled:opacity-50"
                         >
-                            {processing ? 'Processing...' : `Pay GHS ${agentFee} to Gain API Access`}
+                            {processing ? 'Processing...' : `Pay GHS ${agentFee} to Become an Agent`}
                         </button>
                         {errors.message && <p className="text-red-500 text-sm mt-2">{errors.message}</p>}
                     </form>

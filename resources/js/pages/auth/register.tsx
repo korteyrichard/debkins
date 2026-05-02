@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Head, Link, useForm } from '@inertiajs/react';
 
-export default function Register() {
+export default function Register({ referralCode }: { referralCode?: string }) {
     const { data, setData, post, processing, errors, reset } = useForm({
         name: '',
         email: '',
@@ -13,6 +13,7 @@ export default function Register() {
         business_name: '',
         password: '',
         password_confirmation: '',
+        referral_code: referralCode || '',
     });
     const [showPassword, setShowPassword] = useState(false);
     const [showPasswordConfirmation, setShowPasswordConfirmation] = useState(false);
@@ -34,8 +35,12 @@ export default function Register() {
             <div className="text-center mb-8">
                 <img src='/affiliatesconnects.jpg' alt="Affiliates Connects Logo" className="w-40 h-20 mx-auto mb-4 rounded-none" />
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 uppercase tracking-tight">Create Account</h2>
-                <p className="text-sm text-gray-500 mt-2">Join the Debkins network today</p>
             </div>
+            {data.referral_code && (
+                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-3 rounded-none text-center">
+                    <p className="text-xs text-green-700 dark:text-green-400 font-bold uppercase tracking-wider">Referred by a friend</p>
+                </div>
+            )}
             <form onSubmit={submit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>

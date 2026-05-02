@@ -135,4 +135,7 @@ return [
     'order_pusher_base_url' => env('ORDER_PUSHER_BASE_URL'),
     'order_pusher_api_key' => env('ORDER_PUSHER_API_KEY'),
 
+    'main_domain' => env('MAIN_DOMAIN', 'affiliatesconnects.com'),
+    'store_domain' => env('STORE_DOMAIN', 'affiliatesstores.com'),
+
 ];

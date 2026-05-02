@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use App\Services\OrderPusherService;
 use App\Services\FosterOrderPusherService;
+use App\Services\CheckoutIntegrationService;
 use App\Models\Setting;
 
 class OrdersController extends Controller
@@ -94,6 +95,13 @@ class OrdersController extends Controller
             $user->save();
             Log::info('Wallet balance deducted.', ['userId' => $user->id, 'newWalletBalance' => $user->wallet_balance]);
 
+            // Resolve agent attribution from session
+            $agentId = null;
+            if (config('agent.enabled')) {
+                $integration = new CheckoutIntegrationService();
+                $agentId = $integration->getAgentId($request);
+            }
+
             $createdOrders = [];
 
             // Create separate order for each cart item
@@ -104,6 +112,7 @@ class OrdersController extends Controller
                 // Create the order for this item
                 $order = Order::create([
                     'user_id' => $user->id,
+                    'agent_id' => $agentId,
                     'status' => 'pending',
                     'total' => $itemTotal,
                     'beneficiary_number' => $item->beneficiary_number,
@@ -137,6 +146,12 @@ class OrdersController extends Controller
             // Clear user's cart
             Cart::where('user_id', $user->id)->delete();
             Log::info('Cart cleared.', ['userId' => $user->id]);
+
+            // Clear agent session after checkout
+            if (config('agent.enabled') && $agentId) {
+                $integration = new CheckoutIntegrationService();
+                $integration->clearAgentSession($request);
+            }
 
             DB::commit();
             Log::info('Database transaction committed.');

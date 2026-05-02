@@ -134,7 +134,7 @@ class AdminDashboardController extends Controller
 
         $paginatedOrders = $orders->paginate(50);
         
-        // Transform orders to include variant information
+        // Transform orders to include variant information and reference
         $paginatedOrders->getCollection()->transform(function($order) {
             $order->products = $order->products->map(function($product) {
                 if ($product->pivot->product_variant_id) {
@@ -145,6 +145,8 @@ class AdminDashboardController extends Controller
                 }
                 return $product;
             });
+            $transaction = Transaction::where('order_id', $order->id)->whereNotNull('reference')->first();
+            $order->reference = $transaction?->reference;
             return $order;
         });
 
@@ -327,23 +329,9 @@ class AdminDashboardController extends Controller
             'filterType' => $request->input('type', ''),
             'filterPhone' => $request->input('phone', ''),
             'filterDate' => $request->input('date', ''),
-            'agentFee' => Setting::get('agent_registration_fee', 50),
         ]);
     }
 
-    /**
-     * Update agent registration fee.
-     */
-    public function updateAgentFee(Request $request)
-    {
-        $request->validate([
-            'fee' => 'required|numeric|min:0',
-        ]);
-
-        Setting::set('agent_registration_fee', $request->fee);
-
-        return redirect()->back()->with('success', 'Agent registration fee updated successfully.');
-    }
 
     /**
      * Store a new user.

@@ -9,6 +9,8 @@ use Illuminate\Support\Str;
 use App\Models\Transaction;
 use App\Models\Setting;
 use Illuminate\Support\Facades\Redirect;
+use App\Models\Referral;
+use App\Models\ReferralCommission;
 
 class BecomeAgentController extends Controller
 {
@@ -86,9 +88,58 @@ class BecomeAgentController extends Controller
                 
                 // Update transaction status
                 $transaction->update(['status' => 'completed']);
+
+                // Process referral if referral code was provided
+                $this->processReferral($user);
             }
         }
 
         return redirect()->route('dashboard')->with('success', 'You are now an agent!');
+    }
+
+    private function processReferral($newAgent): void
+    {
+        if (!config('agent.referral_enabled')) {
+            return;
+        }
+
+        if (empty($newAgent->referred_by)) {
+            return;
+        }
+
+        $referrerId = $newAgent->referred_by;
+
+        $referrer = \App\Models\User::find($referrerId);
+        if (!$referrer || (int) $referrerId === (int) $newAgent->id) {
+            return;
+        }
+
+        if (Referral::where('referred_id', $newAgent->id)->exists()) {
+            return;
+        }
+
+        $referral = Referral::create([
+            'referrer_id' => $referrerId,
+            'referred_id' => $newAgent->id,
+            'referred_at' => now(),
+        ]);
+
+        // Create referral commission from agent registration fee
+        $registrationFee = (float) Setting::get('agent_registration_fee', 50);
+        $percentage = (float) Setting::get('referral_commission_percentage', 5);
+        $referralAmount = $registrationFee * ($percentage / 100);
+
+        if ($referralAmount > 0) {
+            ReferralCommission::create([
+                'referrer_id' => $referrerId,
+                'referred_agent_id' => $newAgent->id,
+                'commission_id' => null,
+                'referral_amount' => $referralAmount,
+                'referral_percentage' => $percentage,
+                'status' => 'available',
+                'withdrawn_amount' => 0,
+                'available_at' => now(),
+            ]);
+        }
     }
 }
